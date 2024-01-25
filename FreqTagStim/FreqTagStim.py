@@ -11,43 +11,20 @@ Presentation of stimuli corresponds to square wave (half on half off).
 
 """
 
-from expyriment import design, control, stimuli, misc
-from expyriment.misc import data_preprocessing as dp
 import random
-import csv
-import datetime
 import os
 import glob
 import random
 import numpy as np
+import csv
+import pandas as pd
+from expyriment import design, control, stimuli, misc
+from expyriment.misc import data_preprocessing as dp
 
 # =============================================================================
 
-
-# PARAMETERS (to put in a parameter script)
-
-IsEEG = 0
-
-CONTRASTS = [0.5, 1, 1.5] # sublinal, threashold, and supraliminal contrasts
-EXP_FONT = "Arial"
-NSEQ_PER_CONTRATS = 1
-
-PATH_TO_IMAGES = "C:/Users/Admin/Desktop/FreqTagStim/Stimuli"
-
-REFRESH_RATE = 60 # in Hz
-STIM_FREQ = 6 # in Hz
-FADE = 1.6667 # in sec
-NB_STIM_SEQ = 20
-NB_TARGET_FIXCROSS = 6 # mean number of detections in the attentional task
-DUR_CHANGE_FIXCROSS = 3 # duration of change for fix cross (in number of stim)
-
-# Constants for colours
-BLACK = (0, 0, 0)
-GRAY_B = (119, 136, 153)
-BLUE = (0, 0, 255)
-DARK_GREY = (96, 96, 96)
-WHITE = (255, 255, 255)
-
+# Load task parameters
+from FreqTagStim_parameters import *
 
 # Define useful function
 
@@ -71,8 +48,9 @@ def create_vector_change_fixcross(vector, target_duration, nb_target):
         position = random.randint(5, len(vector) - 5) # avoid the 5 first and last stim
 
         # Check if the position meets the minimum spacing requirement (target duration*2)
-        if 1 in vector[position:position+target_duration*2]:
-            break
+        for element in vector[position:position+target_duration*2]:
+            if element != 0:
+                break
 
         # Add 1 to the selected position according to target duration
         for t in range(target_duration):
@@ -81,24 +59,15 @@ def create_vector_change_fixcross(vector, target_duration, nb_target):
     return result
 
 
-def get_xpd_filename(subject_id):
-    filenames = sorted(glob.glob(os.path.join(f'./data/sub-{subject_id}',
-                                    'exp*.xpd')))
-
-    return filenames
-
-
 def save_csv_file(subject_id): 
-    xpd_filename = get_xpd_filename(subject_id)
+    xpd_filename = glob.glob(os.path.join(f'./data/sub-{subject_id}',
+                                    'Freq*.xpd'))[0]
     
-    for f in xpd_filename:
-        data = dp.read_datafile(f)
-        output_file = f"FreqTag_sub-{subject_id}.csv"
-        dp.write_csv_file(filename=os.path.join(f'./data/sub-{subject_id}',
-                                       output_file),
-                             data=data[0],
-                             varnames=data[1],
-                             delimiter=",")
+    data = dp.read_datafile(xpd_filename)
+    output_file = f'./data/sub-{subject_id}/FreqTagStim_sub-{subject_id}.csv'     
+    dataframe = pd.DataFrame(data[0], columns=data[1])
+    dataframe.to_csv(output_file, sep=',', index=False)
+    
     return output_file
 
 
@@ -137,14 +106,14 @@ ready_screen = stimuli.TextLine("Ready? Appuyez sur S pour lancer la séquence",
 ready_screen.preload()
 
 # Decision screen
-decision_screen = stimuli.TextLine("Avez-vous vu des visages de femmes ou d'hommes?", 
+decision_screen = stimuli.TextLine("Avez-vous vu des visages de femmes ou d'hommes? Appuyez sur F ou H", 
                                    position=(0,0),
                                    text_size=21,
                                    text_font=EXP_FONT)
 decision_screen.preload()
 
 # PAS screen
-pas_screen = stimuli.TextLine("PAS?", 
+pas_screen = stimuli.TextLine("PAS? Appuyez sur 0, 1, 2 ou 3", 
                               position=(0,0),
                               text_size=21,
                               text_font=EXP_FONT)
@@ -155,17 +124,21 @@ pas_screen.preload()
 # GENERATE STIMULI LISTS AND SEQUENCES
 # =============================================================================
 
+# get path to images
+root_path = os.getcwd()
+path_to_images = os.path.join(root_path, "./Stimuli") 
+
 # generate sequences with 1 face every 5th item 
 sequence = [0] * NB_STIM_SEQ
 for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
 # get face stimuli
-face_05_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '0.5%', 'Face', '*.png')))
-face_1_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '1%', 'Face', '*.png')))
-face_15_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '1.5%', 'Face', '*.png')))
-face_2_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '2%', 'Face', '*.png')))
-face_25_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '2.5%', 'Face', '*.png')))
+face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', '*.png')))
+face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', '*.png')))
+face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', '*.png')))
+face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', '*.png')))
+face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', '*.png')))
 
 face_dict = {'Contrast_0.5': face_05_files,
              'Contrast_1': face_1_files,
@@ -174,11 +147,11 @@ face_dict = {'Contrast_0.5': face_05_files,
              'Contrast_2.5': face_25_files}
 
 # get item stimuli
-item_05_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '0.5%', 'NonFace', '*.png')))
-item_1_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '1%', 'NonFace', '*.png')))
-item_15_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '1.5%', 'NonFace', '*.png')))
-item_2_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '2%', 'NonFace', '*.png')))
-item_25_files = sorted(glob.glob(os.path.join(PATH_TO_IMAGES, '2.5%', 'NonFace', '*.png')))
+item_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'NonFace', '*.png')))
+item_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'NonFace', '*.png')))
+item_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'NonFace', '*.png')))
+item_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'NonFace', '*.png')))
+item_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'NonFace', '*.png')))
 
 item_dict = {'Contrast_0.5': item_05_files,
              'Contrast_1': item_1_files,
@@ -226,7 +199,7 @@ random.shuffle(shuffle_seq)
 # Basic parameters from stimuli presentation
 onset_stim = 1000/STIM_FREQ # one stimulus each onset (in ms)
 t_one_frame = 1000/60 # time of one frame (in ms)
-nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus presentation
+nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
 nb_stim_fade = round(STIM_FREQ*FADE) # nb of stim for fade
 
 # Computaing alpha values
@@ -234,7 +207,7 @@ nb_stim_fade = round(STIM_FREQ*FADE) # nb of stim for fade
 alpha_exp = np.concatenate([np.zeros(round(nb_frame_stim/2)), np.repeat(100, round(nb_frame_stim/2))])
 
 # for fade stimuli
-# alpha_values = np.linspace(5, 95, num=nb_frame_stim) # avoid extrem values (max=100)
+alpha_values = np.linspace(5, 95, num=nb_frame_stim) # avoid extrem values (max=100)
 alpha_fade_in = []
 alpha_fade_out = []
 
@@ -308,21 +281,34 @@ for block_num in range(0, len(generated_seq['contrast_type'])):
 # DEFINE THE VARIABLES THAT WILL BE SAVED 
 # =============================================================================
 
-variable_names = ["subject",
-                   "contrast_type",
-                   "trial",
-                   "stimulus",
-                   "t_on_stim",
-                   "t_off_stim"]
+fixcross_task = {'block': [],
+                 'trial': [],
+                 'fixcross_resp': [],
+                 'fixcross_time': [],
+                 'fixcross_vector': []}
+        
 
+trial_variable_names = ["subject",
+                        "contrast_type",
+                        "trial",
+                        "stimulus",
+                        "t_on_stim",
+                        "t_off_stim"]
+    
+block_variable_names = ["t_decision_on",
+                        "decision_resp",
+                        "rt_decision",
+                        "t_decision_off",
+                        "t_pas_on",
+                        "pas_resp",
+                        "pas_rt",
+                        "t_pas_off"]
+
+all_variable_names = trial_variable_names + block_variable_names
 
 # =============================================================================
 # START THE TASK
 # =============================================================================
-
-
-# Initialize frame count
-frames = [0]
 
 # Display the sequence
 exp.keyboard.check()    
@@ -335,33 +321,47 @@ for block in exp.blocks:
     # fixation for a random duration between 2 and 5 sec
     fixation_cross.present() 
     exp.clock.wait(random.randint(2, 5))
-    
+            
     # fade-in
     
     # experimental trials        
     for t, trial in enumerate(block.trials):
         
+        # space press for attentionnal task
+        space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
+        if space_resp:
+            space_time = exp.clock.time
+        else: 
+            space_resp = None
+            space_time = None
+        fixcross_task['block'].append(block.name)
+        fixcross_task['trial'].append(trial.id+1)
+        fixcross_task['fixcross_resp'].append(space_resp)
+        fixcross_task['fixcross_time'].append(space_time)
+        fixcross_task['fixcross_vector'].append(fixcross_vector[t])
+        exp.keyboard.clear()
+        
         t_on_stim = exp.clock.time
         
         # present stim with fix cross
         trial.stimuli[0].present()
-        exp.clock.wait(t_one_frame*nb_frame_stim/2)
+        exp.clock.wait(t_one_frame*int(nb_frame_stim/2))
+        t_off_stim = exp.clock.time
         
         if fixcross_vector[t] == 0:  
             fixation_cross.present()
         else: 
             fixation_cross_blue.present()
-        exp.clock.wait(t_one_frame*nb_frame_stim/2)        
+        exp.clock.wait(t_one_frame*int(nb_frame_stim/2))   
 
-        t_off_stim = exp.clock.time        
-            
         # save trial data
         trial_data = [subject,
                       block.name,
                       trial.id+1,
                       trial.get_factor("stim_name"),
                       t_on_stim,
-                      t_off_stim]
+                      t_off_stim] + \
+            [np.nan for _ in range(len(block_variable_names))]
         
         exp.data.add(trial_data)
     
@@ -376,12 +376,17 @@ for block in exp.blocks:
     # PAS response
     t_pas_on = exp.clock.time  
     pas_screen.present()
-    pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_h, misc.constants.K_f])
+    pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_0, misc.constants.K_1,
+                                          misc.constants.K_2, misc.constants.K_3])
     t_pas_off = exp.clock.time
-    
+      
     # save response data
     data_saved_table = [subject,
                         block.name,
+                        "None",
+                        "None",
+                        t_on_stim,
+                        t_off_stim,
                         t_decision_on,
                         decision_resp,
                         rt_decision,
@@ -393,7 +398,7 @@ for block in exp.blocks:
     
     exp.data.add(data_saved_table)
         
-exp.data.add_variable_names(variable_names)
+exp.data.add_variable_names(all_variable_names)
 
 # =============================================================================
 # SAVE DATA AND END EXPERIMENT
@@ -402,7 +407,10 @@ exp.data.add_variable_names(variable_names)
 control.end(goodbye_text="Fin de l'expérience. Merci pour votre participation !",
                 goodbye_delay=2000)
 
-# convert 
+# fixcross in dataframe
+fixcross_dataframe = pd.DataFrame(fixcross_task)
+
+# convert sequences data 
 csv_filename = save_csv_file(subject_id=subject)
 
 
