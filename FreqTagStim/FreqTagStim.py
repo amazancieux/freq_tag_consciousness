@@ -20,6 +20,7 @@ import csv
 import pandas as pd
 from expyriment import design, control, stimuli, misc
 from expyriment.misc import data_preprocessing as dp
+import serial
 
 # =============================================================================
 
@@ -74,6 +75,10 @@ def save_csv_file(subject_id):
 # =============================================================================
 # INITIALISATION
 # =============================================================================  
+
+# initialize EEG port
+if IsEEG == 1:
+    port = serial.Serial("COM4", baudrate=115200, timeout=1)  # old baudrate:   9600 115200
 
 exp = design.Experiment(name="Contrast face experiment",
                         background_colour=DARK_GREY,
@@ -133,31 +138,62 @@ sequence = [0] * NB_STIM_SEQ
 for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
-# get face stimuli
-face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', '*.png')))
-face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', '*.png')))
-face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', '*.png')))
-face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', '*.png')))
-face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', '*.png')))
+# get male face stimuli
+m_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'male', '*.png')))
+m_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'male', '*.png')))
+m_face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', 'male', '*.png')))
+m_face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', 'male', '*.png')))
+m_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'male', '*.png')))
+m_face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', 'male', '*.png')))
+m_face_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'Face', 'male', '*.png')))
+m_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 'male', '*.png')))
 
-face_dict = {'Contrast_0.5': face_05_files,
-             'Contrast_1': face_1_files,
-             'Contrast_1.5': face_15_files,
-             'Contrast_2': face_2_files,
-             'Contrast_2.5': face_25_files}
+m_face_dict = {'Contrast_0': m_face_0_files,
+               'Contrast_0.5': m_face_05_files,
+             'Contrast_1': m_face_1_files,
+             'Contrast_1.5': m_face_15_files,
+             'Contrast_2': m_face_2_files,
+             'Contrast_2.5': m_face_25_files,
+             'Contrast_3': m_face_3_files,
+             'Contrast_3.5': m_face_35_files}
+
+# get female face stimuli
+f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
+f_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'female', '*.png')))
+f_face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', 'female', '*.png')))
+f_face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', 'female', '*.png')))
+f_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'female', '*.png')))
+f_face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', 'female', '*.png')))
+f_face_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'Face', 'female', '*.png')))
+f_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 'female', '*.png')))
+
+f_face_dict = {'Contrast_0': f_face_0_files,
+               'Contrast_0.5': f_face_05_files,
+             'Contrast_1': f_face_1_files,
+             'Contrast_1.5': f_face_15_files,
+             'Contrast_2': f_face_2_files,
+             'Contrast_2.5': f_face_25_files,
+             'Contrast_3': f_face_3_files,
+             'Contrast_3.5': f_face_35_files}
 
 # get item stimuli
+item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
 item_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'NonFace', '*.png')))
 item_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'NonFace', '*.png')))
 item_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'NonFace', '*.png')))
 item_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'NonFace', '*.png')))
 item_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'NonFace', '*.png')))
+item_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'NonFace', '*.png')))
+item_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'NonFace', '*.png')))
 
-item_dict = {'Contrast_0.5': item_05_files,
+item_dict = {'Contrast_0': item_0_files,
+             'Contrast_0.5': item_05_files,
              'Contrast_1': item_1_files,
              'Contrast_1.5': item_15_files,
              'Contrast_2': item_2_files,
-             'Contrast_2.5': item_25_files}
+             'Contrast_2.5': item_25_files,
+             'Contrast_3': item_3_files,
+             'Contrast_3.5': item_35_files}
 
 # create N sequences per selected contrast 
 generated_seq = {'contrast_type': [],
@@ -176,15 +212,20 @@ for contrast in CONTRASTS:
             
             else: 
                 # select a random index
-                random_index = random.randrange(len(face_dict[f'Contrast_{contrast}']))
+                random_index = random.randrange(len(item_dict[f'Contrast_{contrast}']))
                 # get face
-                item = face_dict[f'Contrast_{contrast}'][random_index]
+                if (n_seq % 2) == 0: 
+                    face_type = 'male'
+                    item = m_face_dict[f'Contrast_{contrast}'][random_index]
+                else: 
+                    face_type = 'female'
+                    item = f_face_dict[f'Contrast_{contrast}'][random_index]
             
             # add it to seq
             seq.append(item)
                 
         # add seq to block
-        generated_seq['contrast_type'].append(f'Contrast_{contrast}')
+        generated_seq['contrast_type'].append(f'Contrast_{contrast}_{face_type}')
         generated_seq['sequence'].append(seq)
             
         
@@ -283,6 +324,7 @@ for block_num in range(0, len(generated_seq['contrast_type'])):
 
 fixcross_task = {'block': [],
                  'trial': [],
+                 'frame': [],
                  'fixcross_resp': [],
                  'fixcross_time': [],
                  'fixcross_vector': []}
@@ -291,9 +333,10 @@ fixcross_task = {'block': [],
 trial_variable_names = ["subject",
                         "contrast_type",
                         "trial",
+                        "frame",
                         "stimulus",
-                        "t_on_stim",
-                        "t_off_stim"]
+                        "t_on_frame",
+                        "t_off_frame"]
     
 block_variable_names = ["t_decision_on",
                         "decision_resp",
@@ -309,6 +352,9 @@ all_variable_names = trial_variable_names + block_variable_names
 # =============================================================================
 # START THE TASK
 # =============================================================================
+
+# Initialize frame count
+frame = 0
 
 # Display the sequence
 exp.keyboard.check()    
@@ -327,43 +373,50 @@ for block in exp.blocks:
     # experimental trials        
     for t, trial in enumerate(block.trials):
         
-        # space press for attentionnal task
-        space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
-        if space_resp:
-            space_time = exp.clock.time
-        else: 
-            space_resp = None
-            space_time = None
-        fixcross_task['block'].append(block.name)
-        fixcross_task['trial'].append(trial.id+1)
-        fixcross_task['fixcross_resp'].append(space_resp)
-        fixcross_task['fixcross_time'].append(space_time)
-        fixcross_task['fixcross_vector'].append(fixcross_vector[t])
-        exp.keyboard.clear()
+        for alpha in alpha_exp:
+            
+            # update frame
+            frame = frame+1 
+            
+            # space press for attentionnal task
+            space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
+            if space_resp:
+                space_time = exp.clock.time
+            else: 
+                space_resp = None
+                space_time = None
+            fixcross_task['block'].append(block.name)
+            fixcross_task['trial'].append(trial.id+1)
+            fixcross_task['frame'].append(frame)
+            fixcross_task['fixcross_resp'].append(space_resp)
+            fixcross_task['fixcross_time'].append(space_time)
+            fixcross_task['fixcross_vector'].append(fixcross_vector[t])
+            exp.keyboard.clear()
+            
+            if alpha == 0:    
+                # present stim with fix cross
+                t_on_frame = exp.clock.time
+                trial.stimuli[0].present()
+                t_off_frame = exp.clock.time
+            
+            else:
+                # present only fix cross
+                if fixcross_vector[t] == 0:  
+                    fixation_cross.present()
+                else: 
+                    fixation_cross_blue.present()                
+          
+            # save trial data
+            trial_data = [subject,
+                          block.name,
+                          trial.id+1,
+                          trial.get_factor("stim_name"),
+                          frame,
+                          t_on_frame,
+                          t_off_frame] + \
+                [np.nan for _ in range(len(block_variable_names))]
         
-        t_on_stim = exp.clock.time
-        
-        # present stim with fix cross
-        trial.stimuli[0].present()
-        exp.clock.wait(t_one_frame*int(nb_frame_stim/2))
-        t_off_stim = exp.clock.time
-        
-        if fixcross_vector[t] == 0:  
-            fixation_cross.present()
-        else: 
-            fixation_cross_blue.present()
-        exp.clock.wait(t_one_frame*int(nb_frame_stim/2))   
-
-        # save trial data
-        trial_data = [subject,
-                      block.name,
-                      trial.id+1,
-                      trial.get_factor("stim_name"),
-                      t_on_stim,
-                      t_off_stim] + \
-            [np.nan for _ in range(len(block_variable_names))]
-        
-        exp.data.add(trial_data)
+            exp.data.add(trial_data)
     
     # fade out
               
@@ -385,8 +438,9 @@ for block in exp.blocks:
                         block.name,
                         "None",
                         "None",
-                        t_on_stim,
-                        t_off_stim,
+                        "None",
+                        "None",
+                        "None",
                         t_decision_on,
                         decision_resp,
                         rt_decision,
@@ -407,8 +461,10 @@ exp.data.add_variable_names(all_variable_names)
 control.end(goodbye_text="Fin de l'expérience. Merci pour votre participation !",
                 goodbye_delay=2000)
 
-# fixcross in dataframe
+# fixcross in dataframe and save
 fixcross_dataframe = pd.DataFrame(fixcross_task)
+file = f'./data/sub-{subject}/fixCross_sub-{subject}.csv' 
+fixcross_dataframe.to_csv(file, sep=',', index=False)
 
 # convert sequences data 
 csv_filename = save_csv_file(subject_id=subject)
