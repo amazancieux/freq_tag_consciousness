@@ -2,16 +2,19 @@
 """
 Created on Wed Jan 10 10:52:01 2024
 
+SESSION 2
+-------------------------------------------------------------------------------
 This task is a frequency tagging task which present sequences of picture stimuli 
 degraded in several level of contrasts and with 2AFC and PAS questions at the 
-end of each sequence. 
+end of each sequence. EEG option available. 
 Presentation of stimuli corresponds to square wave (half on half off).
+
+All modified parameters are in the FreqTagStim_parameters.py 
 
 @author: Audrey Mazancieux
 
 """
 
-import random
 import os
 import glob
 import random
@@ -72,9 +75,34 @@ def save_csv_file(subject_id):
     return output_file
 
 
+def scan():
+    available = []
+    for i in range(256) : 
+        try : 
+            s= serial.Serial("COM"+str(i))
+            available.append((s.portstr))
+            s.close()
+        except serial.SerialException :
+            pass
+    return available
+
+
+def send_trigger(trigger):
+    try : 
+         port.write(trigger)
+    except:
+        pass
+# https://www.ascii-code.com/ to find the corresponding b'' decimal trigger its decimal to hexadecimal
+
+
 # =============================================================================
 # INITIALISATION
 # =============================================================================  
+
+# get info for EEG port 
+print(scan())
+com_input = input("The port COM is: ")
+port = serial.Serial("COM"+com_input, baudrate = 115200)
 
 # initialize EEG port
 if IsEEG == 1:
@@ -291,31 +319,42 @@ for block_num in range(0, len(generated_seq['contrast_type'])):
     contrast_type = generated_seq['contrast_type'][block_num]
     block = design.Block(name=f'{contrast_type}') 
     
+    # get total number of stim including fade period
+    tot_stim_with_fade = NB_STIM_SEQ + nb_stim_fade*2
+    
     # add trials to each block using generated seq
-    for trial_num in range(len(sequence)):
+    for trial_num in range(len(tot_stim_with_fade)):
         
-        # stim 0 is black cross and 0 transparency 
-        stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
-             
-        if fixcross_vector[trial_num] == 0:                  
-            fixation_cross.plot(stim) 
-            stim.preload()
-            stim_name = generated_seq['sequence'][block_num][trial_num]    
-            trial = design.Trial()
-            trial.set_factor("stim_name", stim_name)
-            trial.add_stimulus(stim)         
-        else:            
-            fixation_cross_blue.plot(stim) 
-            stim.preload()
-            stim_name = generated_seq['sequence'][block_num][trial_num]    
-            trial = design.Trial()
-            trial.set_factor("stim_name", stim_name)
-            trial.add_stimulus(stim)  
+        if trial_num >= nb_stim_fade:             
+            # get fade stim
+            stimuli.Picture(item_dict['sequence'][block_num][]
+            
+        
+        
+            # get expe stim 
+            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num-nb_stim_fade])
+            
+            # add fix cross (black or blue depending on condition) 
+            if fixcross_vector[trial_num] == 0:                  
+                fixation_cross.plot(stim) 
+                stim.preload()
+                stim_name = generated_seq['sequence'][block_num][trial_num-nb_stim_fade]    
+                trial = design.Trial()
+                trial.set_factor("stim_name", stim_name)
+                trial.add_stimulus(stim)         
+            else:            
+                fixation_cross_blue.plot(stim) 
+                stim.preload()
+                stim_name = generated_seq['sequence'][block_num][trial_num-nb_stim_fade]    
+                trial = design.Trial()
+                trial.set_factor("stim_name", stim_name)
+                trial.add_stimulus(stim)  
                 
         block.add_trial(trial)
     
     # add the block to the experiment
     exp.add_block(block)
+
 
 
 # =============================================================================
