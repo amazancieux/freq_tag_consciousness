@@ -49,7 +49,7 @@ def create_vector_change_fixcross(vector, target_duration, nb_target):
 
     for i in range(nb_target):
         # Generate a random position
-        position = random.randint(5, len(vector) - 5) # avoid the 5 first and last stim
+        position = random.randint(15, len(vector) - 15) # avoid the 15 first and last stim
 
         # Check if the position meets the minimum spacing requirement (target duration*2)
         for element in vector[position:position+target_duration*2]:
@@ -100,9 +100,10 @@ def send_trigger(trigger):
 # =============================================================================  
 
 # get info for EEG port 
-print(scan())
-com_input = input("The port COM is: ")
-port = serial.Serial("COM"+com_input, baudrate = 115200)
+if IsEEG == 1: 
+    print(scan())
+    com_input = input("The port COM is: ")
+    port = serial.Serial("COM"+com_input, baudrate = 115200)
 
 # initialize EEG port
 if IsEEG == 1:
@@ -125,14 +126,14 @@ exp.screen.refresh_rate = REFRESH_RATE
 # =============================================================================
 
 # Fixation cross screens
-fixation_cross = stimuli.FixCross(size=(30, 30), line_width=2)
-fixation_cross.preload()
+fixation_cross_white = stimuli.FixCross(size=(20, 20), line_width=2, colour=(WHITE))
+fixation_cross_white.preload()
 
-fixation_cross_blue = stimuli.FixCross(size=(30, 30), line_width=2, colour=(BLUE))
+fixation_cross_blue = stimuli.FixCross(size=(20, 20), line_width=2, colour=(BLUE))
 fixation_cross_blue.preload()
 
 # Ready screen
-ready_screen = stimuli.TextLine("Ready? Appuyez sur S pour lancer la séquence", 
+ready_screen = stimuli.TextLine("Prêt.e? Appuyez sur ESPACE pour lancer la séquence", 
                                  position=(0,0),
                                  text_size=21,
                                  text_font=EXP_FONT)
@@ -157,12 +158,18 @@ pas_screen.preload()
 # GENERATE STIMULI LISTS AND SEQUENCES
 # =============================================================================
 
+# Basic parameters from stimuli presentation
+onset_stim = 1000/STIM_FREQ # one stimulus each onset (in ms)
+t_one_frame = 1000/60 # time of one frame (in ms)
+nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
+nb_stim_fade = round(STIM_FREQ*FADE) # nb of stim for fade
+
 # get path to images
 root_path = os.getcwd()
 path_to_images = os.path.join(root_path, "./Stimuli") 
 
 # generate sequences with 1 face every 5th item 
-sequence = [0] * NB_STIM_SEQ
+sequence = [0] * (NB_STIM_SEQ+nb_stim_fade*2)
 for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
@@ -238,14 +245,17 @@ for contrast in CONTRASTS:
                 # get item
                 item = item_dict[f'Contrast_{contrast}'][random_index]
             
-            else: 
-                # select a random index
-                random_index = random.randrange(len(item_dict[f'Contrast_{contrast}']))
-                # get face
+            else:                
                 if (n_seq % 2) == 0: 
+                    # select a random index
+                    random_index = random.randrange(len(m_face_dict[f'Contrast_{contrast}']))
+                    # get face
                     face_type = 'male'
                     item = m_face_dict[f'Contrast_{contrast}'][random_index]
                 else: 
+                    # select a random index
+                    random_index = random.randrange(len(f_face_dict[f'Contrast_{contrast}']))
+                    # get face
                     face_type = 'female'
                     item = f_face_dict[f'Contrast_{contrast}'][random_index]
             
@@ -264,12 +274,6 @@ random.shuffle(shuffle_seq)
 # =============================================================================
 # OTHER PARAMETERS
 # =============================================================================
-
-# Basic parameters from stimuli presentation
-onset_stim = 1000/STIM_FREQ # one stimulus each onset (in ms)
-t_one_frame = 1000/60 # time of one frame (in ms)
-nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
-nb_stim_fade = round(STIM_FREQ*FADE) # nb of stim for fade
 
 # Computaing alpha values
 # for experimental stimuli
@@ -308,7 +312,7 @@ subject = get_subject(exp)
 # =============================================================================
 
 # Define moments for fix cross change  
-vector = [0] * NB_STIM_SEQ
+vector = [0] * (NB_STIM_SEQ+nb_stim_fade*2)
 fixcross_vector = create_vector_change_fixcross(vector=vector, 
                                                 target_duration=DUR_CHANGE_FIXCROSS,
                                                 nb_target=NB_TARGET_FIXCROSS)
@@ -319,42 +323,60 @@ for block_num in range(0, len(generated_seq['contrast_type'])):
     contrast_type = generated_seq['contrast_type'][block_num]
     block = design.Block(name=f'{contrast_type}') 
     
-    # get total number of stim including fade period
-    tot_stim_with_fade = NB_STIM_SEQ + nb_stim_fade*2
     
     # add trials to each block using generated seq
-    for trial_num in range(len(tot_stim_with_fade)):
+    for trial_num in range(len(generated_seq['sequence'][block_num])):
         
-        if trial_num >= nb_stim_fade:             
-            # get fade stim
-            stimuli.Picture(item_dict['sequence'][block_num][]
+        trial = design.Trial()
+        
+        if trial_num < nb_stim_fade:             
+            # get fade in stim without noise
+            stim1 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
+            fixation_cross_white.plot(stim1)
+            stim1.preload()
+            # get fade in stim with noise
+            stim2 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])                   
+            stim2.add_noise(grain_size=1, percentage=alpha_fade_in[trial_num, -1], colour=DARK_GREY)      
+            fixation_cross_white.plot(stim2) 
+            stim2.preload()  
             
+            trial.add_stimulus(stim1)
+            trial.add_stimulus(stim2)
+            stim_name = 'fade-in'
+            
+        elif trial_num > nb_stim_fade+NB_STIM_SEQ:
+            # get fade out stim without noise
+            stim1 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
+            fixation_cross_white.plot(stim1)
+            stim1.preload()
+            # get fade out stim with noise
+            stim2 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
+            stim2.add_noise(grain_size=1, percentage=alpha_fade_out[trial_num-(nb_stim_fade+NB_STIM_SEQ), -1], colour=DARK_GREY)         
+            fixation_cross_white.plot(stim2)    
+            stim2.preload()  
+            
+            trial.add_stimulus(stim1)
+            trial.add_stimulus(stim2)
+            stim_name = 'fade-out'
         
-        
+        else:
             # get expe stim 
-            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num-nb_stim_fade])
-            
-            # add fix cross (black or blue depending on condition) 
+            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])               
+            # add fix cross (red or blue depending on condition) 
             if fixcross_vector[trial_num] == 0:                  
-                fixation_cross.plot(stim) 
-                stim.preload()
-                stim_name = generated_seq['sequence'][block_num][trial_num-nb_stim_fade]    
-                trial = design.Trial()
-                trial.set_factor("stim_name", stim_name)
-                trial.add_stimulus(stim)         
+                fixation_cross_white.plot(stim)         
             else:            
                 fixation_cross_blue.plot(stim) 
-                stim.preload()
-                stim_name = generated_seq['sequence'][block_num][trial_num-nb_stim_fade]    
-                trial = design.Trial()
-                trial.set_factor("stim_name", stim_name)
-                trial.add_stimulus(stim)  
+            stim.preload()
+            trial.add_stimulus(stim)            
+            stim_name = generated_seq['sequence'][block_num][trial_num] 
+                  
+        trial.set_factor("stim_name", stim_name)
                 
         block.add_trial(trial)
     
     # add the block to the experiment
     exp.add_block(block)
-
 
 
 # =============================================================================
@@ -401,50 +423,30 @@ for block in exp.blocks:
     
     # display ready screen
     ready_screen.present()
-    exp.keyboard.wait_char("s")
+    exp.keyboard.wait(misc.constants.K_SPACE)
     
     # fixation for a random duration between 2 and 5 sec
-    fixation_cross.present() 
+    fixation_cross_white.present() 
     exp.clock.wait(random.randint(2, 5))
-            
-    # fade-in
     
-    # experimental trials        
+    # loop for sequences        
     for t, trial in enumerate(block.trials):
         
-        for alpha in alpha_exp:
-            
-            # update frame
-            frame = frame+1 
-            
-            # space press for attentionnal task
-            space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
-            if space_resp:
-                space_time = exp.clock.time
-            else: 
-                space_resp = None
-                space_time = None
-            fixcross_task['block'].append(block.name)
-            fixcross_task['trial'].append(trial.id+1)
-            fixcross_task['frame'].append(frame)
-            fixcross_task['fixcross_resp'].append(space_resp)
-            fixcross_task['fixcross_time'].append(space_time)
-            fixcross_task['fixcross_vector'].append(fixcross_vector[t])
-            exp.keyboard.clear()
-            
-            if alpha == 0:    
-                # present stim with fix cross
+        # Fade-in 
+        if t < nb_stim_fade:
+            for alpha in alpha_fade_in[t]:
+     
+                # update frame
+                frame = frame+1 
+                
+                # present stim
                 t_on_frame = exp.clock.time
-                trial.stimuli[0].present()
-                t_off_frame = exp.clock.time
+                if alpha == 0:          
+                    trial.stimuli[0].present()
+                else:
+                    trial.stimuli[1].present()                    
+                t_off_frame = exp.clock
             
-            else:
-                # present only fix cross
-                if fixcross_vector[t] == 0:  
-                    fixation_cross.present()
-                else: 
-                    fixation_cross_blue.present()                
-          
             # save trial data
             trial_data = [subject,
                           block.name,
@@ -456,8 +458,82 @@ for block in exp.blocks:
                 [np.nan for _ in range(len(block_variable_names))]
         
             exp.data.add(trial_data)
-    
-    # fade out
+        
+        # Fade-out
+        if t > nb_stim_fade+NB_STIM_SEQ:
+            for alpha in alpha_fade_out[t-(nb_stim_fade+NB_STIM_SEQ)]:
+                     
+                # update frame
+                frame = frame+1 
+                
+                # present stim
+                t_on_frame = exp.clock.time
+                if alpha == 0:          
+                    trial.stimuli[0].present()
+                else:
+                    trial.stimuli[1].present()                    
+                t_off_frame = exp.clock.time
+                
+            # save trial data
+            trial_data = [subject,
+                          block.name,
+                          trial.id+1,
+                          trial.get_factor("stim_name"),
+                          frame,
+                          t_on_frame,
+                          t_off_frame] + \
+                [np.nan for _ in range(len(block_variable_names))]
+        
+            exp.data.add(trial_data)
+ 
+        # Experimental trials
+        else: 
+            for alpha in alpha_exp:
+                
+                # update frame
+                t_on_frame = exp.clock.time
+                frame = frame+1 
+                
+                # space press for attentionnal task
+                space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
+                if space_resp:
+                    space_time = exp.clock.time
+                else: 
+                    space_resp = None
+                    space_time = None
+                fixcross_task['block'].append(block.name)
+                fixcross_task['trial'].append(trial.id+1)
+                fixcross_task['frame'].append(frame)
+                fixcross_task['fixcross_resp'].append(space_resp)
+                fixcross_task['fixcross_time'].append(space_time)
+                fixcross_task['fixcross_vector'].append(fixcross_vector[t])
+                exp.keyboard.clear()
+                
+                if alpha == 0:    
+                    # present stim with fix cross     
+                    trial.stimuli[0].present()   
+                    frame_name = trial.get_factor("stim_name")
+                else:
+                    # present only fix cross
+                    frame_name = 'fix_cross'
+                    if fixcross_vector[t] == 0:  
+                        fixation_cross_white.present()
+                    else: 
+                        fixation_cross_blue.present() 
+                        
+                t_off_frame = exp.clock.time
+          
+                # save trial data
+                trial_data = [subject,
+                              block.name,
+                              trial.id+1,
+                              frame_name,
+                              frame,
+                              t_on_frame,
+                              t_off_frame] + \
+                    [np.nan for _ in range(len(block_variable_names))]
+            
+                exp.data.add(trial_data)
               
     # decision    
     t_decision_on = exp.clock.time
