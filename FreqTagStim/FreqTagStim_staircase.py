@@ -63,10 +63,10 @@ def create_vector_change_fixcross(vector, target_duration, nb_target):
 
 def save_csv_file(subject_id): 
     xpd_filename = glob.glob(os.path.join(f'./data/sub-{subject_id}',
-                                    'Freq*.xpd'))[0]
+                                    '*staircase*.xpd'))[0]
     
     data = dp.read_datafile(xpd_filename)
-    output_file = f'./data/sub-{subject_id}/FreqTagStim_sub-{subject_id}.csv'     
+    output_file = f'./data/sub-{subject_id}/FreqTagStim_staircase_sub-{subject_id}.csv'     
     dataframe = pd.DataFrame(data[0], columns=data[1])
     dataframe.to_csv(output_file, sep=',', index=False)
     
@@ -77,11 +77,11 @@ def save_csv_file(subject_id):
 # INITIALISATION
 # =============================================================================  
 
-exp = design.Experiment(name="Contrast face experiment",
+exp = design.Experiment(name="Contrast face experiment staircase",
                         background_colour=DARK_GREY,
                         foreground_colour=misc.constants.C_BLACK)  
 
-exp.add_experiment_info("ContrastFace")
+exp.add_experiment_info("ContrastFace_staircase")
 control.defaults.window_mode = True # ask for switch to windows mode
 control.initialize(exp)
 
@@ -102,24 +102,34 @@ fixation_cross_blue.preload()
 
 # Ready screen
 ready_screen = stimuli.TextLine("Prêt.e? Appuyez sur ESPACE pour lancer la séquence", 
-                                 position=(0,0),
-                                 text_size=21,
-                                 text_font=EXP_FONT)
+                               position=(0,0),
+                               text_size=21,
+                               text_font=EXP_FONT)
 ready_screen.preload()
 
 # Decision screen
-decision_screen = stimuli.TextLine("Avez-vous vu des visages de femmes ou d'hommes? Appuyez sur F ou H", 
-                                   position=(0,0),
-                                   text_size=21,
-                                   text_font=EXP_FONT)
+decision_screen = stimuli.TextBox("Avez-vous vu des visages de femmes ou d'hommes? Appuyez sur F ou H", 
+                                  size=(600, 600),
+                                  position=(0,0),
+                                  text_size=21,
+                                  text_font=EXP_FONT)
 decision_screen.preload()
 
 # PAS screen
-pas_screen = stimuli.TextLine("PAS? Appuyez sur 0, 1, 2 ou 3", 
+pas_screen = stimuli.TextBox("Impression des stimuli? Appuyez sur 0 (aucune impression des stilumi), 1 (bref un aperçu des stimuli), 2 (une expérience presque claire des stimuli) ou 3 (une expérience claire des stimuli)", 
+                              size=(600, 600),
                               position=(0,0),
                               text_size=21,
                               text_font=EXP_FONT)
 pas_screen.preload()
+
+# Confident screen
+conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Appuyez sur 1 pour 50% (réponse au hasard), 2 pour 60%, 3 pour 70%, 4 pour 80%, 5 pour 90% ou 6 pour 100% (très confiant.e)", 
+                              size=(600, 600),
+                              position=(0,0),
+                              text_size=21,
+                              text_font=EXP_FONT)
+conf_screen.preload()
 
 
 # =============================================================================
@@ -142,8 +152,8 @@ for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
 # get male face stimuli
-m_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'male', '*.png')))
-m_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'male', '*.png')))
+# m_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'male', '*.png')))
+# m_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'male', '*.png')))
 m_face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', 'male', '*.png')))
 m_face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', 'male', '*.png')))
 m_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'male', '*.png')))
@@ -153,8 +163,7 @@ m_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 
 m_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'male', '*.png')))
 m_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'male', '*.png')))
 
-m_face_dict = {'Contrast_0': m_face_0_files,
-               'Contrast_0.5': m_face_05_files,
+m_face_dict = {
              'Contrast_1': m_face_1_files,
              'Contrast_1.5': m_face_15_files,
              'Contrast_2': m_face_2_files,
@@ -165,8 +174,8 @@ m_face_dict = {'Contrast_0': m_face_0_files,
              'Contrast_4.5': m_face_45_files}
 
 # get female face stimuli
-f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
-f_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'female', '*.png')))
+# f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
+# f_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'female', '*.png')))
 f_face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', 'female', '*.png')))
 f_face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', 'female', '*.png')))
 f_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'female', '*.png')))
@@ -176,8 +185,7 @@ f_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 
 f_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'female', '*.png')))
 f_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'female', '*.png')))
 
-f_face_dict = {'Contrast_0': f_face_0_files,
-               'Contrast_0.5': f_face_05_files,
+f_face_dict = {
              'Contrast_1': f_face_1_files,
              'Contrast_1.5': f_face_15_files,
              'Contrast_2': f_face_2_files,
@@ -188,8 +196,8 @@ f_face_dict = {'Contrast_0': f_face_0_files,
              'Contrast_4.5': f_face_45_files}
 
 # get item stimuli
-item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
-item_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'NonFace', '*.png')))
+# item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
+# item_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'NonFace', '*.png')))
 item_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'NonFace', '*.png')))
 item_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'NonFace', '*.png')))
 item_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'NonFace', '*.png')))
@@ -199,8 +207,7 @@ item_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'NonFace',
 item_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'NonFace', '*.png')))
 item_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'NonFace', '*.png')))
 
-item_dict = {'Contrast_0': item_0_files,
-             'Contrast_0.5': item_05_files,
+item_dict = {
              'Contrast_1': item_1_files,
              'Contrast_1.5': item_15_files,
              'Contrast_2': item_2_files,
@@ -294,7 +301,7 @@ fixcross_vector = create_vector_change_fixcross(vector=vector,
                                                 nb_target=NB_TARGET_FIXCROSS)
 
 # Loop to create and add blocks
-for block_num in range(generated_seq['contrast_type']):
+for block_num in range(len(generated_seq['contrast_type'])):
 
     contrast_type = generated_seq['contrast_type'][block_num]
     block = design.Block(name=f'{contrast_type}') 
@@ -375,15 +382,19 @@ trial_variable_names = ["subject",
                         "t_on_frame",
                         "t_off_frame"]
     
-block_variable_names = ["t_decision_on",
+block_variable_names = ["t_pas_on",
+                        "pas_resp",
+                        "pas_rt",
+                        "t_pas_off",
+                        "t_decision_on",
                         "decision_resp",
                         "correct_response",
                         "rt_decision",
                         "t_decision_off",
-                        "t_pas_on",
-                        "pas_resp",
-                        "pas_rt",
-                        "t_pas_off"]
+                        "t_conf_on",
+                        "conf_resp",
+                        "conf_rt",
+                        "t_conf_off"]
 
 all_variable_names = trial_variable_names + block_variable_names
 
@@ -397,13 +408,11 @@ frame = 0
 # Display the sequence
 exp.keyboard.check()    
 
-for block in range(NSEQ_TOT_SESS1): 
+for i_block in range(0, NSEQ_TOT_SESS1): 
     
     # staircase initial contrast
-    if block == 0:
+    if i_block == 0:
         c = 3
-    else:
-        continue
     
     # get relevant blocks and shuffle   
     index_contrast_m = [index for index, value in enumerate(generated_seq['contrast_type']) if value == f'Contrast_{c}_male']
@@ -527,19 +536,26 @@ for block in range(NSEQ_TOT_SESS1):
                     [np.nan for _ in range(len(block_variable_names))]
             
                 exp.data.add(trial_data)
-              
-    # decision    
-    t_decision_on = exp.clock.time
-    decision_screen.present()
-    decision_resp, rt_decision = exp.keyboard.wait([misc.constants.K_h, misc.constants.K_f])
-    t_decision_off = exp.clock.time
-    
+
     # PAS response
     t_pas_on = exp.clock.time  
     pas_screen.present()
     pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_0, misc.constants.K_1,
                                           misc.constants.K_2, misc.constants.K_3])
     t_pas_off = exp.clock.time
+        
+    # decision    
+    t_decision_on = exp.clock.time
+    decision_screen.present()
+    decision_resp, rt_decision = exp.keyboard.wait([misc.constants.K_h, misc.constants.K_f])
+    t_decision_off = exp.clock.time
+    
+    # conf response
+    t_conf_on = exp.clock.time  
+    conf_screen.present()
+    conf_resp, conf_rt = exp.keyboard.wait([misc.constants.K_0, misc.constants.K_1,
+                                          misc.constants.K_2, misc.constants.K_3])
+    t_conf_off = exp.clock.time
     
     # get correct resp
     if "f" in block.name:
@@ -562,15 +578,19 @@ for block in range(NSEQ_TOT_SESS1):
                         "None",
                         "None",
                         "None",
+                        t_pas_on,
+                        pas_resp,
+                        pas_rt,
+                        t_pas_off,
                         t_decision_on,
                         decision_resp,
                         correct_response,
                         rt_decision,
                         t_decision_off,
-                        t_pas_on,
-                        pas_resp,
-                        pas_rt,
-                        t_pas_off]
+                        t_conf_on,
+                        conf_resp,
+                        conf_rt,
+                        t_conf_off]
     
     exp.data.add(data_saved_table)
         
