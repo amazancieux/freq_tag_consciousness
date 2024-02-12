@@ -116,7 +116,7 @@ decision_screen = stimuli.TextBox("Avez-vous vu des visages de femmes ou d'homme
 decision_screen.preload()
 
 # PAS screen
-pas_screen = stimuli.TextBox("Impression des stimuli? Appuyez sur 0 (aucune impression des stilumi), 1 (bref un aperçu des stimuli), 2 (une expérience presque claire des stimuli) ou 3 (une expérience claire des stimuli)", 
+pas_screen = stimuli.TextBox("Impression des stimuli? Appuyez sur 1 (aucune impression des stimuli), 2 (bref un aperçu des stimuli), 3 (une expérience presque claire des stimuli) ou 4 (une expérience claire des stimuli)", 
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
@@ -164,13 +164,13 @@ m_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'ma
 m_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'male', '*.png')))
 
 m_face_dict = {
-             'Contrast_1': m_face_1_files,
+             'Contrast_1.0': m_face_1_files,
              'Contrast_1.5': m_face_15_files,
-             'Contrast_2': m_face_2_files,
+             'Contrast_2.0': m_face_2_files,
              'Contrast_2.5': m_face_25_files,
-             'Contrast_3': m_face_3_files,
+             'Contrast_3.0': m_face_3_files,
              'Contrast_3.5': m_face_35_files,
-              'Contrast_4': m_face_4_files,
+              'Contrast_4.0': m_face_4_files,
              'Contrast_4.5': m_face_45_files}
 
 # get female face stimuli
@@ -186,13 +186,13 @@ f_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'fe
 f_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'female', '*.png')))
 
 f_face_dict = {
-             'Contrast_1': f_face_1_files,
+             'Contrast_1.0': f_face_1_files,
              'Contrast_1.5': f_face_15_files,
-             'Contrast_2': f_face_2_files,
+             'Contrast_2.0': f_face_2_files,
              'Contrast_2.5': f_face_25_files,
-             'Contrast_3': f_face_3_files,
+             'Contrast_3.0': f_face_3_files,
              'Contrast_3.5': f_face_35_files,
-             'Contrast_4': f_face_4_files,
+             'Contrast_4.0': f_face_4_files,
              'Contrast_4.5': f_face_45_files}
 
 # get item stimuli
@@ -208,13 +208,13 @@ item_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'NonFace', '*
 item_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'NonFace', '*.png')))
 
 item_dict = {
-             'Contrast_1': item_1_files,
+             'Contrast_1.0': item_1_files,
              'Contrast_1.5': item_15_files,
-             'Contrast_2': item_2_files,
+             'Contrast_2.0': item_2_files,
              'Contrast_2.5': item_25_files,
-             'Contrast_3': item_3_files,
+             'Contrast_3.0': item_3_files,
              'Contrast_3.5': item_35_files,
-             'Contrast_4': item_4_files,
+             'Contrast_4.0': item_4_files,
              'Contrast_4.5': item_45_files}
 
 # create N sequences per selected contrast 
@@ -540,8 +540,8 @@ for i_block in range(0, NSEQ_TOT_SESS1):
     # PAS response
     t_pas_on = exp.clock.time  
     pas_screen.present()
-    pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_0, misc.constants.K_1,
-                                          misc.constants.K_2, misc.constants.K_3])
+    pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_1, misc.constants.K_2,
+                                          misc.constants.K_3, misc.constants.K_4])
     t_pas_off = exp.clock.time
         
     # decision    
@@ -553,8 +553,9 @@ for i_block in range(0, NSEQ_TOT_SESS1):
     # conf response
     t_conf_on = exp.clock.time  
     conf_screen.present()
-    conf_resp, conf_rt = exp.keyboard.wait([misc.constants.K_0, misc.constants.K_1,
-                                          misc.constants.K_2, misc.constants.K_3])
+    conf_resp, conf_rt = exp.keyboard.wait([misc.constants.K_1, misc.constants.K_2,
+                                          misc.constants.K_3, misc.constants.K_4,
+                                          misc.constants.K_5, misc.constants.K_6])
     t_conf_off = exp.clock.time
     
     # get correct resp
