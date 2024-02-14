@@ -116,7 +116,7 @@ decision_screen = stimuli.TextBox("Avez-vous vu des visages de femmes ou d'homme
 decision_screen.preload()
 
 # PAS screen
-pas_screen = stimuli.TextBox("Impression des stimuli? Appuyez sur 1 (aucune impression des stimuli), 2 (bref un aperçu des stimuli), 3 (une expérience presque claire des stimuli) ou 4 (une expérience claire des stimuli)", 
+pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impression des visages), 2 (bref un aperçu des visages), 3 (une expérience presque claire des visages) ou 4 (une expérience claire des visages)", 
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
@@ -152,8 +152,8 @@ for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
 # get male face stimuli
-# m_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'male', '*.png')))
-# m_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'male', '*.png')))
+m_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'male', '*.png')))
+m_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'male', '*.png')))
 m_face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', 'male', '*.png')))
 m_face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', 'male', '*.png')))
 m_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'male', '*.png')))
@@ -163,7 +163,8 @@ m_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 
 m_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'male', '*.png')))
 m_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'male', '*.png')))
 
-m_face_dict = {
+m_face_dict = {'Contrast_0.0': m_face_0_files,
+               'Contrast_0.5': m_face_05_files,
              'Contrast_1.0': m_face_1_files,
              'Contrast_1.5': m_face_15_files,
              'Contrast_2.0': m_face_2_files,
@@ -174,8 +175,8 @@ m_face_dict = {
              'Contrast_4.5': m_face_45_files}
 
 # get female face stimuli
-# f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
-# f_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'female', '*.png')))
+f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
+f_face_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'Face', 'female', '*.png')))
 f_face_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'Face', 'female', '*.png')))
 f_face_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'Face', 'female', '*.png')))
 f_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'female', '*.png')))
@@ -185,7 +186,8 @@ f_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 
 f_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'female', '*.png')))
 f_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'female', '*.png')))
 
-f_face_dict = {
+f_face_dict = {'Contrast_0.0': f_face_0_files,
+               'Contrast_0.5': f_face_05_files,
              'Contrast_1.0': f_face_1_files,
              'Contrast_1.5': f_face_15_files,
              'Contrast_2.0': f_face_2_files,
@@ -196,8 +198,8 @@ f_face_dict = {
              'Contrast_4.5': f_face_45_files}
 
 # get item stimuli
-# item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
-# item_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'NonFace', '*.png')))
+item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
+item_05_files = sorted(glob.glob(os.path.join(path_to_images, '0.5%', 'NonFace', '*.png')))
 item_1_files = sorted(glob.glob(os.path.join(path_to_images, '1%', 'NonFace', '*.png')))
 item_15_files = sorted(glob.glob(os.path.join(path_to_images, '1.5%', 'NonFace', '*.png')))
 item_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'NonFace', '*.png')))
@@ -207,7 +209,8 @@ item_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'NonFace',
 item_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'NonFace', '*.png')))
 item_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'NonFace', '*.png')))
 
-item_dict = {
+item_dict = {'Contrast_0.0': item_0_files,
+             'Contrast_0.5': item_05_files,
              'Contrast_1.0': item_1_files,
              'Contrast_1.5': item_15_files,
              'Contrast_2.0': item_2_files,
@@ -566,7 +569,10 @@ for i_block in range(0, NSEQ_TOT_SESS1):
     
     # staircase
     accuracy = (correct_response == decision_resp)
-    if accuracy == True:    
+    if accuracy == True: 
+        if c == 0:
+            c = 0
+        else:
             c = c-0.5
     else: 
             c = c+0.5
