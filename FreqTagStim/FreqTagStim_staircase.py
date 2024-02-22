@@ -22,11 +22,9 @@ import numpy as np
 import pandas as pd
 from expyriment import design, control, stimuli, misc
 from expyriment.misc import data_preprocessing as dp
+import FreqTagStim_parameters as param
 
 # =============================================================================
-
-# Load task parameters
-from FreqTagStim_parameters import *
 
 # Define useful function
 
@@ -78,15 +76,15 @@ def save_csv_file(subject_id):
 # =============================================================================  
 
 exp = design.Experiment(name="Contrast face experiment staircase",
-                        background_colour=DARK_GREY,
-                        foreground_colour=misc.constants.C_BLACK)  
+                        background_colour=param.DARK_GREY,
+                        foreground_colour=misc.constants.param.C_BLACK)  
 
 exp.add_experiment_info("ContrastFace_staircase")
 control.defaults.window_mode = True # ask for switch to windows mode
 control.initialize(exp)
 
 # set refresh rate 
-exp.screen.refresh_rate = REFRESH_RATE
+exp.screen.refresh_rate = param.REFRESH_RATE
 
 
 # =============================================================================
@@ -94,17 +92,17 @@ exp.screen.refresh_rate = REFRESH_RATE
 # =============================================================================
 
 # Fixation cross screens
-fixation_cross_white = stimuli.FixCross(size=(20, 20), line_width=2, colour=(WHITE))
+fixation_cross_white = stimuli.FixCross(size=(20, 20), line_width=2, colour=(param.WHITE))
 fixation_cross_white.preload()
 
-fixation_cross_blue = stimuli.FixCross(size=(20, 20), line_width=2, colour=(BLUE))
+fixation_cross_blue = stimuli.FixCross(size=(20, 20), line_width=2, colour=(param.BLUE))
 fixation_cross_blue.preload()
 
 # Ready screen
 ready_screen = stimuli.TextLine("Prêt.e? Appuyez sur ESPACE pour lancer la séquence", 
                                position=(0,0),
                                text_size=21,
-                               text_font=EXP_FONT)
+                               text_font=param.EXP_FONT)
 ready_screen.preload()
 
 # Decision screen
@@ -112,7 +110,7 @@ decision_screen = stimuli.TextBox("Avez-vous vu des visages de femmes ou d'homme
                                   size=(600, 600),
                                   position=(0,0),
                                   text_size=21,
-                                  text_font=EXP_FONT)
+                                  text_font=param.EXP_FONT)
 decision_screen.preload()
 
 # PAS screen
@@ -120,7 +118,7 @@ pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impr
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
-                              text_font=EXP_FONT)
+                              text_font=param.EXP_FONT)
 pas_screen.preload()
 
 # Confident screen
@@ -128,7 +126,7 @@ conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Ap
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
-                              text_font=EXP_FONT)
+                              text_font=param.EXP_FONT)
 conf_screen.preload()
 
 
@@ -137,17 +135,17 @@ conf_screen.preload()
 # =============================================================================
 
 # Basic parameters from stimuli presentation
-onset_stim = 1000/STIM_FREQ # one stimulus each onset (in ms)
+onset_stim = 1000/param.STIM_FREQ # one stimulus each onset (in ms)
 t_one_frame = 1000/60 # time of one frame (in ms)
 nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
-nb_stim_fade = round(STIM_FREQ*FADE) # nb of stim for fade
+nb_stim_fade = round(param.param.STIM_FREQ*param.FADE) # nb of stim for fade
 
 # get path to images
 root_path = os.getcwd()
 path_to_images = os.path.join(root_path, "./Stimuli") 
 
 # generate sequences with 1 face every 5th item 
-sequence = [0] * (NB_STIM_SEQ+nb_stim_fade*2)
+sequence = [0] * (param.NB_STIM_SEQ+nb_stim_fade*2)
 for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
@@ -161,7 +159,6 @@ m_face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', 
 m_face_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'Face', 'male', '*.png')))
 m_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 'male', '*.png')))
 m_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'male', '*.png')))
-m_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'male', '*.png')))
 
 m_face_dict = {'Contrast_0.0': m_face_0_files,
                'Contrast_0.5': m_face_05_files,
@@ -171,8 +168,7 @@ m_face_dict = {'Contrast_0.0': m_face_0_files,
              'Contrast_2.5': m_face_25_files,
              'Contrast_3.0': m_face_3_files,
              'Contrast_3.5': m_face_35_files,
-              'Contrast_4.0': m_face_4_files,
-             'Contrast_4.5': m_face_45_files}
+              'Contrast_4.0': m_face_4_files}
 
 # get female face stimuli
 f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
@@ -184,7 +180,6 @@ f_face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', 
 f_face_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'Face', 'female', '*.png')))
 f_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 'female', '*.png')))
 f_face_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'Face', 'female', '*.png')))
-f_face_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'Face', 'female', '*.png')))
 
 f_face_dict = {'Contrast_0.0': f_face_0_files,
                'Contrast_0.5': f_face_05_files,
@@ -194,8 +189,7 @@ f_face_dict = {'Contrast_0.0': f_face_0_files,
              'Contrast_2.5': f_face_25_files,
              'Contrast_3.0': f_face_3_files,
              'Contrast_3.5': f_face_35_files,
-             'Contrast_4.0': f_face_4_files,
-             'Contrast_4.5': f_face_45_files}
+             'Contrast_4.0': f_face_4_files}
 
 # get item stimuli
 item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
@@ -207,7 +201,6 @@ item_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'NonFace',
 item_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'NonFace', '*.png')))
 item_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'NonFace', '*.png')))
 item_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'NonFace', '*.png')))
-item_45_files = sorted(glob.glob(os.path.join(path_to_images, '4.5%', 'NonFace', '*.png')))
 
 item_dict = {'Contrast_0.0': item_0_files,
              'Contrast_0.5': item_05_files,
@@ -217,15 +210,14 @@ item_dict = {'Contrast_0.0': item_0_files,
              'Contrast_2.5': item_25_files,
              'Contrast_3.0': item_3_files,
              'Contrast_3.5': item_35_files,
-             'Contrast_4.0': item_4_files,
-             'Contrast_4.5': item_45_files}
+             'Contrast_4.0': item_4_files}
 
 # create N sequences per selected contrast 
 generated_seq = {'contrast_type': [],
                  'sequence': []}
 
 for contrast in item_dict.keys():       
-    for n_seq in range(0, NSEQ_CONTRAST_SESS1):        
+    for n_seq in range(0, param.NSEQ_CONTRAST_SESS1):        
         seq = []
         for stim in sequence: 
                  
@@ -298,10 +290,10 @@ subject = get_subject(exp)
 # =============================================================================
 
 # Define moments for fix cross change  
-vector = [0] * (NB_STIM_SEQ+nb_stim_fade*2)
+vector = [0] * (param.NB_STIM_SEQ+nb_stim_fade*2)
 fixcross_vector = create_vector_change_fixcross(vector=vector, 
-                                                target_duration=DUR_CHANGE_FIXCROSS,
-                                                nb_target=NB_TARGET_FIXCROSS)
+                                                target_duration=param.DUR_CHANGE_FIXCROSS,
+                                                nb_target=param.NB_TARGET_FIXCROSS)
 
 # Loop to create and add blocks
 for block_num in range(len(generated_seq['contrast_type'])):
@@ -322,7 +314,7 @@ for block_num in range(len(generated_seq['contrast_type'])):
             stim1.preload()
             # get fade in stim with noise
             stim2 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])                   
-            stim2.add_noise(grain_size=1, percentage=alpha_fade_in[trial_num, -1], colour=DARK_GREY)      
+            stim2.add_noise(grain_size=1, percentage=alpha_fade_in[trial_num, -1], colour=param.DARK_GREY)      
             fixation_cross_white.plot(stim2) 
             stim2.preload()  
             
@@ -330,14 +322,14 @@ for block_num in range(len(generated_seq['contrast_type'])):
             trial.add_stimulus(stim2)
             stim_name = 'fade-in'
             
-        elif trial_num > nb_stim_fade+NB_STIM_SEQ:
+        elif trial_num > nb_stim_fade+param.NB_STIM_SEQ:
             # get fade out stim without noise
             stim1 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
             fixation_cross_white.plot(stim1)
             stim1.preload()
             # get fade out stim with noise
             stim2 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
-            stim2.add_noise(grain_size=1, percentage=alpha_fade_out[trial_num-(nb_stim_fade+NB_STIM_SEQ), -1], colour=DARK_GREY)         
+            stim2.add_noise(grain_size=1, percentage=alpha_fade_out[trial_num-(nb_stim_fade+param.NB_STIM_SEQ), -1], colour=param.DARK_GREY)         
             fixation_cross_white.plot(stim2)    
             stim2.preload()  
             
@@ -411,7 +403,7 @@ frame = 0
 # Display the sequence
 exp.keyboard.check()    
 
-for i_block in range(0, NSEQ_TOT_SESS1): 
+for i_block in range(0, param.NSEQ_TOT_SESS1): 
     
     # staircase initial contrast
     if i_block == 0:
@@ -465,8 +457,8 @@ for i_block in range(0, NSEQ_TOT_SESS1):
             exp.data.add(trial_data)
         
         # Fade-out
-        if t > nb_stim_fade+NB_STIM_SEQ:
-            for alpha in alpha_fade_out[t-(nb_stim_fade+NB_STIM_SEQ)]:
+        if t > nb_stim_fade+param.NB_STIM_SEQ:
+            for alpha in alpha_fade_out[t-(nb_stim_fade+param.NB_STIM_SEQ)]:
                      
                 # update frame
                 frame = frame+1 
