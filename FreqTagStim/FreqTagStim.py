@@ -19,16 +19,13 @@ import os
 import glob
 import random
 import numpy as np
-import csv
 import pandas as pd
 from expyriment import design, control, stimuli, misc
 from expyriment.misc import data_preprocessing as dp
 import serial
+import FreqTagStim_parameters as param
 
 # =============================================================================
-
-# Load task parameters
-from FreqTagStim_parameters import *
 
 # Define useful function
 
@@ -100,25 +97,25 @@ def send_trigger(trigger):
 # =============================================================================  
 
 # get info for EEG port 
-if IsEEG == 1: 
+if param.IsEEG == 1: 
     print(scan())
     com_input = input("The port COM is: ")
     port = serial.Serial("COM"+com_input, baudrate = 115200)
 
 # initialize EEG port
-if IsEEG == 1:
+if param.IsEEG == 1:
     port = serial.Serial("COM4", baudrate=115200, timeout=1)  # old baudrate:   9600 115200
 
 exp = design.Experiment(name="Contrast face experiment",
-                        background_colour=DARK_GREY,
-                        foreground_colour=misc.constants.C_BLACK)  
+                        background_colour=param.DARK_GREY,
+                        foreground_colour=misc.constants.param.C_BLACK)  
 
 exp.add_experiment_info("ContrastFace")
 control.defaults.window_mode = True # ask for switch to windows mode
 control.initialize(exp)
 
 # set refresh rate 
-exp.screen.refresh_rate = REFRESH_RATE
+exp.screen.refresh_rate = param.REFRESH_RATE
 
 
 # =============================================================================
@@ -126,32 +123,42 @@ exp.screen.refresh_rate = REFRESH_RATE
 # =============================================================================
 
 # Fixation cross screens
-fixation_cross_white = stimuli.FixCross(size=(20, 20), line_width=2, colour=(WHITE))
+fixation_cross_white = stimuli.FixCross(size=(20, 20), line_width=2, colour=(param.WHITE))
 fixation_cross_white.preload()
 
-fixation_cross_blue = stimuli.FixCross(size=(20, 20), line_width=2, colour=(BLUE))
+fixation_cross_blue = stimuli.FixCross(size=(20, 20), line_width=2, colour=(param.BLUE))
 fixation_cross_blue.preload()
 
 # Ready screen
 ready_screen = stimuli.TextLine("Prêt.e? Appuyez sur ESPACE pour lancer la séquence", 
-                                 position=(0,0),
-                                 text_size=21,
-                                 text_font=EXP_FONT)
+                               position=(0,0),
+                               text_size=21,
+                               text_font=param.EXP_FONT)
 ready_screen.preload()
 
 # Decision screen
-decision_screen = stimuli.TextLine("Avez-vous vu des visages de femmes ou d'hommes? Appuyez sur F ou H", 
-                                   position=(0,0),
-                                   text_size=21,
-                                   text_font=EXP_FONT)
+decision_screen = stimuli.TextBox("Avez-vous vu des visages de femmes ou d'hommes? Appuyez sur F ou H", 
+                                  size=(600, 600),
+                                  position=(0,0),
+                                  text_size=21,
+                                  text_font=param.EXP_FONT)
 decision_screen.preload()
 
 # PAS screen
-pas_screen = stimuli.TextLine("PAS? Appuyez sur 0, 1, 2 ou 3", 
+pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impression des visages), 2 (bref un aperçu des visages), 3 (une expérience presque claire des visages) ou 4 (une expérience claire des visages)", 
+                              size=(600, 600),
                               position=(0,0),
                               text_size=21,
-                              text_font=EXP_FONT)
+                              text_font=param.EXP_FONT)
 pas_screen.preload()
+
+# Confident screen
+conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Appuyez sur 1 pour 50% (réponse au hasard), 2 pour 60%, 3 pour 70%, 4 pour 80%, 5 pour 90% ou 6 pour 100% (très confiant.e)", 
+                              size=(600, 600),
+                              position=(0,0),
+                              text_size=21,
+                              text_font=param.EXP_FONT)
+conf_screen.preload()
 
 
 # =============================================================================
@@ -159,17 +166,17 @@ pas_screen.preload()
 # =============================================================================
 
 # Basic parameters from stimuli presentation
-onset_stim = 1000/STIM_FREQ # one stimulus each onset (in ms)
+onset_stim = 1000/param.STIM_FREQ # one stimulus each onset (in ms)
 t_one_frame = 1000/60 # time of one frame (in ms)
 nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
-nb_stim_fade = round(STIM_FREQ*FADE) # nb of stim for fade
+nb_stim_fade = round(param.STIM_FREQ*param.FADE) # nb of stim for fade
 
 # get path to images
 root_path = os.getcwd()
 path_to_images = os.path.join(root_path, "./Stimuli") 
 
 # generate sequences with 1 face every 5th item 
-sequence = [0] * (NB_STIM_SEQ+nb_stim_fade*2)
+sequence = [0] * (param.NB_STIM_SEQ+nb_stim_fade*2)
 for i in range(4, len(sequence), 5):
     sequence[i] = 1
 
@@ -234,8 +241,8 @@ item_dict = {'Contrast_0': item_0_files,
 generated_seq = {'contrast_type': [],
                  'sequence': []}
 
-for contrast in CONTRASTS:       
-    for n_seq in range(0, NSEQ_PER_CONTRATS):        
+for contrast in param.CONTRASTS:       
+    for n_seq in range(0, param.NSEQ_PER_CONTRATS):        
         seq = []
         for stim in sequence: 
                  
@@ -312,13 +319,13 @@ subject = get_subject(exp)
 # =============================================================================
 
 # Define moments for fix cross change  
-vector = [0] * (NB_STIM_SEQ+nb_stim_fade*2)
+vector = [0] * (param.NB_STIM_SEQ+nb_stim_fade*2)
 fixcross_vector = create_vector_change_fixcross(vector=vector, 
-                                                target_duration=DUR_CHANGE_FIXCROSS,
-                                                nb_target=NB_TARGET_FIXCROSS)
+                                                target_duration=param.DUR_CHANGE_FIXCROSS,
+                                                nb_target=param.NB_TARGET_FIXCROSS)
 
 # Loop to create and add blocks
-for block_num in range(0, len(generated_seq['contrast_type'])):
+for block_num in shuffle_seq:
 
     contrast_type = generated_seq['contrast_type'][block_num]
     block = design.Block(name=f'{contrast_type}') 
@@ -336,7 +343,7 @@ for block_num in range(0, len(generated_seq['contrast_type'])):
             stim1.preload()
             # get fade in stim with noise
             stim2 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])                   
-            stim2.add_noise(grain_size=1, percentage=alpha_fade_in[trial_num, -1], colour=DARK_GREY)      
+            stim2.add_noise(grain_size=1, percentage=alpha_fade_in[trial_num, -1], colour=param.DARK_GREY)      
             fixation_cross_white.plot(stim2) 
             stim2.preload()  
             
@@ -344,14 +351,14 @@ for block_num in range(0, len(generated_seq['contrast_type'])):
             trial.add_stimulus(stim2)
             stim_name = 'fade-in'
             
-        elif trial_num > nb_stim_fade+NB_STIM_SEQ:
+        elif trial_num > nb_stim_fade+param.NB_STIM_SEQ:
             # get fade out stim without noise
             stim1 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
             fixation_cross_white.plot(stim1)
             stim1.preload()
             # get fade out stim with noise
             stim2 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
-            stim2.add_noise(grain_size=1, percentage=alpha_fade_out[trial_num-(nb_stim_fade+NB_STIM_SEQ), -1], colour=DARK_GREY)         
+            stim2.add_noise(grain_size=1, percentage=alpha_fade_out[trial_num-(nb_stim_fade+param.NB_STIM_SEQ), -1], colour=param.DARK_GREY)         
             fixation_cross_white.plot(stim2)    
             stim2.preload()  
             
@@ -399,14 +406,19 @@ trial_variable_names = ["subject",
                         "t_on_frame",
                         "t_off_frame"]
     
-block_variable_names = ["t_decision_on",
-                        "decision_resp",
-                        "rt_decision",
-                        "t_decision_off",
-                        "t_pas_on",
+block_variable_names = ["t_pas_on",
                         "pas_resp",
                         "pas_rt",
-                        "t_pas_off"]
+                        "t_pas_off",
+                        "t_decision_on",
+                        "decision_resp",
+                        "correct_response",
+                        "rt_decision",
+                        "t_decision_off",
+                        "t_conf_on",
+                        "conf_resp",
+                        "conf_rt",
+                        "t_conf_off"]
 
 all_variable_names = trial_variable_names + block_variable_names
 
@@ -460,8 +472,8 @@ for block in exp.blocks:
             exp.data.add(trial_data)
         
         # Fade-out
-        if t > nb_stim_fade+NB_STIM_SEQ:
-            for alpha in alpha_fade_out[t-(nb_stim_fade+NB_STIM_SEQ)]:
+        if t > nb_stim_fade+param.NB_STIM_SEQ:
+            for alpha in alpha_fade_out[t-(nb_stim_fade+param.NB_STIM_SEQ)]:
                      
                 # update frame
                 frame = frame+1 
@@ -535,19 +547,33 @@ for block in exp.blocks:
             
                 exp.data.add(trial_data)
               
+    # PAS response
+    t_pas_on = exp.clock.time  
+    pas_screen.present()
+    pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_1, misc.constants.K_2,
+                                          misc.constants.K_3, misc.constants.K_4])
+    t_pas_off = exp.clock.time
+        
     # decision    
     t_decision_on = exp.clock.time
     decision_screen.present()
     decision_resp, rt_decision = exp.keyboard.wait([misc.constants.K_h, misc.constants.K_f])
     t_decision_off = exp.clock.time
     
-    # PAS response
-    t_pas_on = exp.clock.time  
-    pas_screen.present()
-    pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_0, misc.constants.K_1,
-                                          misc.constants.K_2, misc.constants.K_3])
-    t_pas_off = exp.clock.time
-      
+    # conf response
+    t_conf_on = exp.clock.time  
+    conf_screen.present()
+    conf_resp, conf_rt = exp.keyboard.wait([misc.constants.K_1, misc.constants.K_2,
+                                          misc.constants.K_3, misc.constants.K_4,
+                                          misc.constants.K_5, misc.constants.K_6])
+    t_conf_off = exp.clock.time
+    
+    # get correct resp
+    if "f" in block.name:
+        correct_response = 102 # ASCII for f key
+    else: 
+        correct_response = 104 # ASCII for m key
+        
     # save response data
     data_saved_table = [subject,
                         block.name,
@@ -556,18 +582,24 @@ for block in exp.blocks:
                         "None",
                         "None",
                         "None",
-                        t_decision_on,
-                        decision_resp,
-                        rt_decision,
-                        t_decision_off,
                         t_pas_on,
                         pas_resp,
                         pas_rt,
-                        t_pas_off]
+                        t_pas_off,
+                        t_decision_on,
+                        decision_resp,
+                        correct_response,
+                        rt_decision,
+                        t_decision_off,
+                        t_conf_on,
+                        conf_resp,
+                        conf_rt,
+                        t_conf_off]
     
     exp.data.add(data_saved_table)
         
 exp.data.add_variable_names(all_variable_names)
+
 
 # =============================================================================
 # SAVE DATA AND END EXPERIMENT
