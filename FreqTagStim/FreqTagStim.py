@@ -85,11 +85,12 @@ def scan():
 
 
 def send_trigger(trigger):
+    """Trigger are noted in hexadecimal see https://www.ascii-code.com/ to
+    find the correspondance with decimal"""
     try : 
          port.write(trigger)
     except:
         pass
-# https://www.ascii-code.com/ to find the corresponding b'' decimal trigger its decimal to hexadecimal
 
 
 # =============================================================================
@@ -97,14 +98,12 @@ def send_trigger(trigger):
 # =============================================================================  
 
 # get info for EEG port 
-if param.IsEEG == 1: 
-    print(scan())
-    com_input = input("The port COM is: ")
-    port = serial.Serial("COM"+com_input, baudrate = 115200)
+print(scan())
+com_input = input("The port COM is: ")
+port = serial.Serial("COM"+com_input, baudrate = 115200)
 
 # initialize EEG port
-if param.IsEEG == 1:
-    port = serial.Serial("COM4", baudrate=115200, timeout=1)  # old baudrate:   9600 115200
+port = serial.Serial("COM4", baudrate=115200, timeout=1)  # old baudrate:   9600 115200
 
 exp = design.Experiment(name="Contrast face experiment",
                         background_colour=param.DARK_GREY,
@@ -329,6 +328,7 @@ for block_num in shuffle_seq:
 
     contrast_type = generated_seq['contrast_type'][block_num]
     block = design.Block(name=f'{contrast_type}') 
+    send_trigger(param.TRIGGER_SEQ)
     
     
     # add trials to each block using generated seq
@@ -368,7 +368,8 @@ for block_num in shuffle_seq:
         
         else:
             # get expe stim 
-            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])               
+            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])  
+            send_trigger(param.TRIGGER_STIM)            
             # add fix cross (red or blue depending on condition) 
             if fixcross_vector[trial_num] == 0:                  
                 fixation_cross_white.plot(stim)         
