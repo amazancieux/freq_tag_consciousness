@@ -9,7 +9,7 @@ sequences of picture stimuli degraded in several level of contrasts and with
 2AFC and PAS questions at the end of each sequence. 
 Presentation of stimuli corresponds to square wave (half on half off).
 
-All modified parameters are in the FreqTagStim_parameters.py 
+All parameters are in the FreqTagStim_parameters.py 
 
 @author: Audrey Mazancieux
 
