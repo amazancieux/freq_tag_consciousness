@@ -7,7 +7,7 @@ SESSION 2
 This task is a frequency tagging task which present sequences of picture stimuli 
 degraded in several level of contrasts and with 2AFC and PAS questions at the 
 end of each sequence. EEG option available. 
-Presentation of stimuli corresponds to square wave (half on half off).
+Presentation of stimuli corresponds to square wave (on/off).
 
 All modified parameters are in the FreqTagStim_parameters.py 
 
@@ -71,7 +71,6 @@ def save_csv_file(subject_id):
     
     return output_file
 
-
 def scan():
     available = []
     for i in range(256) : 
@@ -84,33 +83,19 @@ def scan():
     return available
 
 
-def send_trigger(trigger):
-    """Trigger are noted in hexadecimal see https://www.ascii-code.com/ to
-    find the correspondance with decimal"""
-    try : 
-         port.write(trigger)
-    except:
-        pass
-
-
 # =============================================================================
 # INITIALISATION
 # =============================================================================  
 
-# get info for EEG port 
-print(scan())
-com_input = input("The port COM is: ")
-port = serial.Serial("COM"+com_input, baudrate = 115200)
-
 # initialize EEG port
-port = serial.Serial("COM4", baudrate=115200, timeout=1)  # old baudrate:   9600 115200
+port = serial.Serial("COM5", baudrate = 115200)
 
 exp = design.Experiment(name="Contrast face experiment",
                         background_colour=param.DARK_GREY,
-                        foreground_colour=misc.constants.param.C_BLACK)  
+                        foreground_colour=misc.constants.C_BLACK)  
 
 exp.add_experiment_info("ContrastFace")
-control.defaults.window_mode = True # ask for switch to windows mode
+control.defaults.window_mode = False # ask for switch to windows mode
 control.initialize(exp)
 
 # set refresh rate 
@@ -152,7 +137,7 @@ pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impr
 pas_screen.preload()
 
 # Confident screen
-conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Appuyez sur 1 pour 50% (réponse au hasard), 2 pour 60%, 3 pour 70%, 4 pour 80%, 5 pour 90% ou 6 pour 100% (très confiant.e)", 
+conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Appuyez sur 1 (réponse au hasard), 2, 3, 4 (très confiant.e)", 
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
@@ -166,7 +151,7 @@ conf_screen.preload()
 
 # Basic parameters from stimuli presentation
 onset_stim = 1000/param.STIM_FREQ # one stimulus each onset (in ms)
-t_one_frame = 1000/60 # time of one frame (in ms)
+t_one_frame = 1000/param.REFRESH_RATE # time of one frame (in ms)
 nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
 nb_stim_fade = round(param.STIM_FREQ*param.FADE) # nb of stim for fade
 
@@ -188,6 +173,7 @@ m_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'ma
 m_face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', 'male', '*.png')))
 m_face_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'Face', 'male', '*.png')))
 m_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 'male', '*.png')))
+m_face_100_files = sorted(glob.glob(os.path.join(path_to_images, '100%', 'Face', 'male', '*.png')))
 
 m_face_dict = {'Contrast_0': m_face_0_files,
                'Contrast_0.5': m_face_05_files,
@@ -196,7 +182,8 @@ m_face_dict = {'Contrast_0': m_face_0_files,
              'Contrast_2': m_face_2_files,
              'Contrast_2.5': m_face_25_files,
              'Contrast_3': m_face_3_files,
-             'Contrast_3.5': m_face_35_files}
+             'Contrast_3.5': m_face_35_files,
+             'Contrast_100': m_face_100_files}
 
 # get female face stimuli
 f_face_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'Face', 'female', '*.png')))
@@ -207,6 +194,7 @@ f_face_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'Face', 'fe
 f_face_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'Face', 'female', '*.png')))
 f_face_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'Face', 'female', '*.png')))
 f_face_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'Face', 'female', '*.png')))
+f_face_100_files = sorted(glob.glob(os.path.join(path_to_images, '100%', 'Face', 'female', '*.png')))
 
 f_face_dict = {'Contrast_0': f_face_0_files,
                'Contrast_0.5': f_face_05_files,
@@ -215,7 +203,8 @@ f_face_dict = {'Contrast_0': f_face_0_files,
              'Contrast_2': f_face_2_files,
              'Contrast_2.5': f_face_25_files,
              'Contrast_3': f_face_3_files,
-             'Contrast_3.5': f_face_35_files}
+             'Contrast_3.5': f_face_35_files,
+             'Contrast_100': f_face_100_files}
 
 # get item stimuli
 item_0_files = sorted(glob.glob(os.path.join(path_to_images, '0%', 'NonFace', '*.png')))
@@ -226,6 +215,7 @@ item_2_files = sorted(glob.glob(os.path.join(path_to_images, '2%', 'NonFace', '*
 item_25_files = sorted(glob.glob(os.path.join(path_to_images, '2.5%', 'NonFace', '*.png')))
 item_3_files = sorted(glob.glob(os.path.join(path_to_images, '3%', 'NonFace', '*.png')))
 item_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'NonFace', '*.png')))
+item_100_files = sorted(glob.glob(os.path.join(path_to_images, '100%', 'NonFace', '*.png')))
 
 item_dict = {'Contrast_0': item_0_files,
              'Contrast_0.5': item_05_files,
@@ -234,7 +224,8 @@ item_dict = {'Contrast_0': item_0_files,
              'Contrast_2': item_2_files,
              'Contrast_2.5': item_25_files,
              'Contrast_3': item_3_files,
-             'Contrast_3.5': item_35_files}
+             'Contrast_3.5': item_35_files,
+             'Contrast_100': item_100_files}
 
 # create N sequences per selected contrast 
 generated_seq = {'contrast_type': [],
@@ -328,8 +319,6 @@ for block_num in shuffle_seq:
 
     contrast_type = generated_seq['contrast_type'][block_num]
     block = design.Block(name=f'{contrast_type}') 
-    send_trigger(param.TRIGGER_SEQ)
-    
     
     # add trials to each block using generated seq
     for trial_num in range(len(generated_seq['sequence'][block_num])):
@@ -351,7 +340,7 @@ for block_num in shuffle_seq:
             trial.add_stimulus(stim2)
             stim_name = 'fade-in'
             
-        elif trial_num > nb_stim_fade+param.NB_STIM_SEQ:
+        elif trial_num >= nb_stim_fade+param.NB_STIM_SEQ:
             # get fade out stim without noise
             stim1 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
             fixation_cross_white.plot(stim1)
@@ -368,8 +357,7 @@ for block_num in shuffle_seq:
         
         else:
             # get expe stim 
-            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])  
-            send_trigger(param.TRIGGER_STIM)            
+            stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])             
             # add fix cross (red or blue depending on condition) 
             if fixcross_vector[trial_num] == 0:                  
                 fixation_cross_white.plot(stim)         
@@ -391,7 +379,8 @@ for block_num in shuffle_seq:
 # DEFINE THE VARIABLES THAT WILL BE SAVED 
 # =============================================================================
 
-fixcross_task = {'block': [],
+fixcross_task = {'block_num': [],
+                 'contrast_type' : [],
                  'trial': [],
                  'frame': [],
                  'fixcross_resp': [],
@@ -400,10 +389,11 @@ fixcross_task = {'block': [],
         
 
 trial_variable_names = ["subject",
+                        "block_num",
                         "contrast_type",
                         "trial",
-                        "frame",
                         "stimulus",
+                        "frame",
                         "t_on_frame",
                         "t_off_frame"]
     
@@ -427,12 +417,9 @@ all_variable_names = trial_variable_names + block_variable_names
 # START THE TASK
 # =============================================================================
 
-# Initialize frame count
-frame = 0
-
 # Display the sequence
 exp.keyboard.check()    
-for block in exp.blocks: 
+for b, block in enumerate(exp.blocks): 
     
     # display ready screen
     ready_screen.present()
@@ -441,13 +428,17 @@ for block in exp.blocks:
     # fixation for a random duration between 2 and 5 sec
     fixation_cross_white.present() 
     exp.clock.wait(random.randint(2, 5))
+    port.write(param.TRIGGER_SEQ)
+    
+    # initialize frame count
+    frame = 0
     
     # loop for sequences        
-    for t, trial in enumerate(block.trials):
+    for trial in block.trials:
         
         # Fade-in 
-        if t < nb_stim_fade:
-            for alpha in alpha_fade_in[t]:
+        if trial.id < nb_stim_fade:
+            for alpha in alpha_fade_in[trial.id]:
      
                 # update frame
                 frame = frame+1 
@@ -458,23 +449,24 @@ for block in exp.blocks:
                     trial.stimuli[0].present()
                 else:
                     trial.stimuli[1].present()                    
-                t_off_frame = exp.clock
+                t_off_frame = exp.clock.time
             
-            # save trial data
-            trial_data = [subject,
-                          block.name,
-                          trial.id+1,
-                          trial.get_factor("stim_name"),
-                          frame,
-                          t_on_frame,
-                          t_off_frame] + \
-                [np.nan for _ in range(len(block_variable_names))]
-        
-            exp.data.add(trial_data)
-        
+                # save trial data
+                trial_data = [subject,
+                              b, 
+                              block.name,
+                              trial.id+1,
+                              f'{trial.get_factor("stim_name")} + {alpha}',
+                              frame,
+                              t_on_frame,
+                              t_off_frame] + \
+                    [np.nan for _ in range(len(block_variable_names))]
+            
+                exp.data.add(trial_data)
+            
         # Fade-out
-        if t > nb_stim_fade+param.NB_STIM_SEQ:
-            for alpha in alpha_fade_out[t-(nb_stim_fade+param.NB_STIM_SEQ)]:
+        elif trial.id >= nb_stim_fade+param.NB_STIM_SEQ:
+            for alpha in alpha_fade_out[trial.id-(nb_stim_fade+param.NB_STIM_SEQ)]:
                      
                 # update frame
                 frame = frame+1 
@@ -487,26 +479,31 @@ for block in exp.blocks:
                     trial.stimuli[1].present()                    
                 t_off_frame = exp.clock.time
                 
-            # save trial data
-            trial_data = [subject,
-                          block.name,
-                          trial.id+1,
-                          trial.get_factor("stim_name"),
-                          frame,
-                          t_on_frame,
-                          t_off_frame] + \
-                [np.nan for _ in range(len(block_variable_names))]
-        
-            exp.data.add(trial_data)
+                # save trial data
+                trial_data = [subject,
+                              b, 
+                              block.name,
+                              trial.id+1,
+                              f'{trial.get_factor("stim_name")} + {alpha}',
+                              frame,
+                              t_on_frame,
+                              t_off_frame] + \
+                    [np.nan for _ in range(len(block_variable_names))]
+            
+                exp.data.add(trial_data)
  
         # Experimental trials
-        else: 
+        else:
+            if 'face' in trial.get_factor("stim_name"): 
+                port.write(param.TRIGGER_FACE)
+            else: 
+                port.write(param.TRIGGER_STIM)
             for alpha in alpha_exp:
                 
                 # update frame
-                t_on_frame = exp.clock.time
                 frame = frame+1 
-                
+                t_on_frame = exp.clock.time
+                            
                 # space press for attentionnal task
                 space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
                 if space_resp:
@@ -514,12 +511,13 @@ for block in exp.blocks:
                 else: 
                     space_resp = None
                     space_time = None
-                fixcross_task['block'].append(block.name)
+                fixcross_task['block_num'].append(block.name)
+                fixcross_task['contrast_type'].append(b)
                 fixcross_task['trial'].append(trial.id+1)
                 fixcross_task['frame'].append(frame)
                 fixcross_task['fixcross_resp'].append(space_resp)
                 fixcross_task['fixcross_time'].append(space_time)
-                fixcross_task['fixcross_vector'].append(fixcross_vector[t])
+                fixcross_task['fixcross_vector'].append(fixcross_vector[trial.id])
                 exp.keyboard.clear()
                 
                 if alpha == 0:    
@@ -529,7 +527,7 @@ for block in exp.blocks:
                 else:
                     # present only fix cross
                     frame_name = 'fix_cross'
-                    if fixcross_vector[t] == 0:  
+                    if fixcross_vector[trial.id] == 0:  
                         fixation_cross_white.present()
                     else: 
                         fixation_cross_blue.present() 
@@ -538,6 +536,7 @@ for block in exp.blocks:
           
                 # save trial data
                 trial_data = [subject,
+                              b, 
                               block.name,
                               trial.id+1,
                               frame_name,
@@ -554,12 +553,34 @@ for block in exp.blocks:
     pas_resp, pas_rt = exp.keyboard.wait([misc.constants.K_1, misc.constants.K_2,
                                           misc.constants.K_3, misc.constants.K_4])
     t_pas_off = exp.clock.time
+    
+    # send trigger
+    if pas_resp == 49:
+        port.write(param.TRIGGER_PAS1)
+    elif pas_resp == 50:
+        port.write(param.TRIGGER_PAS2)
+    elif pas_resp == 51:
+        port.write(param.TRIGGER_PAS3)
+    elif pas_resp == 52:
+        port.write(param.TRIGGER_PAS4)
         
     # decision    
     t_decision_on = exp.clock.time
     decision_screen.present()
     decision_resp, rt_decision = exp.keyboard.wait([misc.constants.K_h, misc.constants.K_f])
     t_decision_off = exp.clock.time
+    
+    # get correct resp
+    if "f" in block.name:
+        correct_response = 102 # ASCII for f key
+    else: 
+        correct_response = 104 # ASCII for m key
+    
+    # send trigger
+    if decision_resp == correct_response:
+        port.write(param.TRIGGER_CORRECT)
+    else: 
+        port.write(param.TRIGGER_INCORRECT)
     
     # conf response
     t_conf_on = exp.clock.time  
@@ -569,14 +590,19 @@ for block in exp.blocks:
                                           misc.constants.K_5, misc.constants.K_6])
     t_conf_off = exp.clock.time
     
-    # get correct resp
-    if "f" in block.name:
-        correct_response = 102 # ASCII for f key
-    else: 
-        correct_response = 104 # ASCII for m key
-        
+    # send trigger
+    if pas_resp == 49:
+        port.write(param.TRIGGER_CONF1)
+    elif pas_resp == 50:
+        port.write(param.TRIGGER_CONF2)
+    elif pas_resp == 51:
+        port.write(param.TRIGGER_CONF3)
+    elif pas_resp == 52:
+        port.write(param.TRIGGER_CONF4)
+              
     # save response data
     data_saved_table = [subject,
+                        b,
                         block.name,
                         "None",
                         "None",
