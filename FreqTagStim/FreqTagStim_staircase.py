@@ -9,7 +9,7 @@ sequences of picture stimuli degraded in several level of contrasts and with
 2AFC and PAS questions at the end of each sequence. 
 Presentation of stimuli corresponds to square wave (half on half off).
 
-All parameters are in the FreqTagStim_parameters.py 
+All modified parameters are in the FreqTagStim_parameters.py 
 
 @author: Audrey Mazancieux
 
@@ -77,10 +77,10 @@ def save_csv_file(subject_id):
 
 exp = design.Experiment(name="Contrast face experiment staircase",
                         background_colour=param.DARK_GREY,
-                        foreground_colour=misc.constants.param.C_BLACK)  
+                        foreground_colour=misc.constants.C_BLACK)  
 
 exp.add_experiment_info("ContrastFace_staircase")
-control.defaults.window_mode = True # ask for switch to windows mode
+control.defaults.window_mode = False # ask for switch to windows mode
 control.initialize(exp)
 
 # set refresh rate 
@@ -122,7 +122,7 @@ pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impr
 pas_screen.preload()
 
 # Confident screen
-conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Appuyez sur 1 pour 50% (réponse au hasard), 2 pour 60%, 3 pour 70%, 4 pour 80%, 5 pour 90% ou 6 pour 100% (très confiant.e)", 
+conf_screen = stimuli.TextBox("Quel est votre confidence dans votre réponse? Appuyez sur 1 (réponse au hasard), 2, 3, 4 (très confiant.e)", 
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
@@ -136,9 +136,9 @@ conf_screen.preload()
 
 # Basic parameters from stimuli presentation
 onset_stim = 1000/param.STIM_FREQ # one stimulus each onset (in ms)
-t_one_frame = 1000/60 # time of one frame (in ms)
+t_one_frame = 1000/param.REFRESH_RATE # time of one frame (in ms)
 nb_frame_stim = round(onset_stim/t_one_frame) # nb of frame for stimulus + blanck presentation
-nb_stim_fade = round(param.param.STIM_FREQ*param.FADE) # nb of stim for fade
+nb_stim_fade = round(param.STIM_FREQ*param.FADE) # nb of stim for fade
 
 # get path to images
 root_path = os.getcwd()
@@ -203,7 +203,7 @@ item_35_files = sorted(glob.glob(os.path.join(path_to_images, '3.5%', 'NonFace',
 item_4_files = sorted(glob.glob(os.path.join(path_to_images, '4%', 'NonFace', '*.png')))
 
 item_dict = {'Contrast_0.0': item_0_files,
-             'Contrast_0.5': item_05_files,
+               'Contrast_0.5': item_05_files,
              'Contrast_1.0': item_1_files,
              'Contrast_1.5': item_15_files,
              'Contrast_2.0': item_2_files,
@@ -322,7 +322,7 @@ for block_num in range(len(generated_seq['contrast_type'])):
             trial.add_stimulus(stim2)
             stim_name = 'fade-in'
             
-        elif trial_num > nb_stim_fade+param.NB_STIM_SEQ:
+        elif trial_num >= nb_stim_fade+param.NB_STIM_SEQ:
             # get fade out stim without noise
             stim1 = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])
             fixation_cross_white.plot(stim1)
@@ -361,7 +361,8 @@ for block_num in range(len(generated_seq['contrast_type'])):
 # DEFINE THE VARIABLES THAT WILL BE SAVED 
 # =============================================================================
 
-fixcross_task = {'block': [],
+fixcross_task = {'block_num': [],
+                 'contrast_type' : [],
                  'trial': [],
                  'frame': [],
                  'fixcross_resp': [],
@@ -370,10 +371,11 @@ fixcross_task = {'block': [],
         
 
 trial_variable_names = ["subject",
+                        "block_num",
                         "contrast_type",
                         "trial",
-                        "frame",
                         "stimulus",
+                        "frame",
                         "t_on_frame",
                         "t_off_frame"]
     
@@ -397,9 +399,6 @@ all_variable_names = trial_variable_names + block_variable_names
 # START THE TASK
 # =============================================================================
 
-# Initialize frame count
-frame = 0
-
 # Display the sequence
 exp.keyboard.check()    
 
@@ -407,7 +406,7 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
     
     # staircase initial contrast
     if i_block == 0:
-        c = 3
+        c = 3.0
     
     # get relevant blocks and shuffle   
     index_contrast_m = [index for index, value in enumerate(generated_seq['contrast_type']) if value == f'Contrast_{c}_male']
@@ -426,12 +425,15 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
     fixation_cross_white.present() 
     exp.clock.wait(random.randint(2, 5))
     
+    # initialize frame count
+    frame = 0
+    
     # loop for sequences        
-    for t, trial in enumerate(block.trials):
+    for trial in block.trials:
         
         # Fade-in 
-        if t < nb_stim_fade:
-            for alpha in alpha_fade_in[t]:
+        if trial.id < nb_stim_fade:
+            for alpha in alpha_fade_in[trial.id]:
      
                 # update frame
                 frame = frame+1 
@@ -442,23 +444,24 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
                     trial.stimuli[0].present()
                 else:
                     trial.stimuli[1].present()                    
-                t_off_frame = exp.clock
+                t_off_frame = exp.clock.time
             
-            # save trial data
-            trial_data = [subject,
-                          block.name,
-                          trial.id+1,
-                          trial.get_factor("stim_name"),
-                          frame,
-                          t_on_frame,
-                          t_off_frame] + \
-                [np.nan for _ in range(len(block_variable_names))]
-        
-            exp.data.add(trial_data)
-        
+                # save trial data
+                trial_data = [subject,
+                              i_block,
+                              block.name,
+                              trial.id+1,
+                              f'{trial.get_factor("stim_name")} + {alpha}',
+                              frame,
+                              t_on_frame,
+                              t_off_frame] + \
+                    [np.nan for _ in range(len(block_variable_names))]
+            
+                exp.data.add(trial_data)
+            
         # Fade-out
-        if t > nb_stim_fade+param.NB_STIM_SEQ:
-            for alpha in alpha_fade_out[t-(nb_stim_fade+param.NB_STIM_SEQ)]:
+        elif trial.id >= nb_stim_fade+param.NB_STIM_SEQ:
+            for alpha in alpha_fade_out[trial.id-(nb_stim_fade+param.NB_STIM_SEQ)]:
                      
                 # update frame
                 frame = frame+1 
@@ -471,26 +474,26 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
                     trial.stimuli[1].present()                    
                 t_off_frame = exp.clock.time
                 
-            # save trial data
-            trial_data = [subject,
-                          block.name,
-                          trial.id+1,
-                          trial.get_factor("stim_name"),
-                          frame,
-                          t_on_frame,
-                          t_off_frame] + \
-                [np.nan for _ in range(len(block_variable_names))]
-        
-            exp.data.add(trial_data)
+                # save trial data
+                trial_data = [subject,
+                              block.name,
+                              trial.id+1,
+                              f'{trial.get_factor("stim_name")} + {alpha}',
+                              frame,
+                              t_on_frame,
+                              t_off_frame] + \
+                    [np.nan for _ in range(len(block_variable_names))]
+            
+                exp.data.add(trial_data)
  
         # Experimental trials
         else: 
             for alpha in alpha_exp:
                 
                 # update frame
-                t_on_frame = exp.clock.time
                 frame = frame+1 
-                
+                t_on_frame = exp.clock.time
+                            
                 # space press for attentionnal task
                 space_resp = exp.keyboard.check(misc.constants.K_SPACE)  
                 if space_resp:
@@ -498,12 +501,13 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
                 else: 
                     space_resp = None
                     space_time = None
-                fixcross_task['block'].append(block.name)
+                fixcross_task['block_num'].append(block.name)
+                fixcross_task['contrast_type'].append(i_block)
                 fixcross_task['trial'].append(trial.id+1)
                 fixcross_task['frame'].append(frame)
                 fixcross_task['fixcross_resp'].append(space_resp)
                 fixcross_task['fixcross_time'].append(space_time)
-                fixcross_task['fixcross_vector'].append(fixcross_vector[t])
+                fixcross_task['fixcross_vector'].append(fixcross_vector[trial.id])
                 exp.keyboard.clear()
                 
                 if alpha == 0:    
@@ -513,7 +517,7 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
                 else:
                     # present only fix cross
                     frame_name = 'fix_cross'
-                    if fixcross_vector[t] == 0:  
+                    if fixcross_vector[trial.id] == 0:  
                         fixation_cross_white.present()
                     else: 
                         fixation_cross_blue.present() 
@@ -561,16 +565,17 @@ for i_block in range(0, param.NSEQ_TOT_SESS1):
     
     # staircase
     accuracy = (correct_response == decision_resp)
-    if accuracy == True: 
-        if c == 0:
-            c = 0
-        else:
+    if accuracy == True:
+        if c == 0.0:
+            c = 0.0
+        else: 
             c = c-0.5
     else: 
             c = c+0.5
       
     # save response data
     data_saved_table = [subject,
+                        i_block,
                         block.name,
                         "None",
                         "None",
@@ -605,7 +610,7 @@ control.end(goodbye_text="Fin de l'expérience. Merci pour votre participation !
 
 # fixcross in dataframe and save
 fixcross_dataframe = pd.DataFrame(fixcross_task)
-file = f'./data/sub-{subject}/fixCross_sub-{subject}.csv' 
+file = f'./data/sub-{subject}/fixCross_staircase_sub-{subject}.csv' 
 fixcross_dataframe.to_csv(file, sep=',', index=False)
 
 # convert sequences data 
