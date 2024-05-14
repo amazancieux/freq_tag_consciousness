@@ -97,7 +97,8 @@ n <- length(unique(resp_data_short$Pp))
 # performance count
 count_first_order <- resp_data_short %>% 
   mutate(count = 1) %>% 
-  dcast(Pp ~ accuracy, value.var = "count", sum)
+  dcast(Pp ~ accuracy, value.var = "count", sum) %>% 
+  mutate(Acc = (H+CR)/(H+CR+O+FA))
 
 
 # get more frequent contrast
@@ -155,6 +156,25 @@ resp_data_short %>%
   xlab("PAS") +
   ylab("mean contrast")
 
+# pas per accuracy
+resp_data_short %>%
+  mutate(acc = ifelse(decision_resp == correct_response, "Correct", "Incorrect")) %>% 
+  group_by(Pp, acc) %>%
+  summarise(pas_score = mean(as.numeric(pas_score))) %>% 
+  group_by(acc) %>%
+  summarise(VD = mean(pas_score),
+            sd = sd(pas_score),
+            se = sd/sqrt(n),
+            CI = se * qt(.975, n() - 1)) %>%
+  ggplot(aes(x = acc, y = VD, fill=acc)) +
+  geom_bar(stat="identity", color='black') +
+  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), width = 0, size = 1)+
+  ggtitle("mean PAS for correct and incorrect responses") +
+  theme_bw() +
+  plot_theme +
+  xlab("Discrimination accuracy") +
+  ylab("mean PAS")
+
 
 
 ## Confidence -----------------------------------------------------------
@@ -178,7 +198,7 @@ resp_data_short %>%
   xlab("Confidence") +
   ylab("mean contrast")
 
-# raw confidence per contrast
+# confidence per accuracy
 resp_data_short %>%
   mutate(acc = ifelse(decision_resp == correct_response, "Correct", "Incorrect")) %>% 
   group_by(Pp, acc) %>%
@@ -189,8 +209,8 @@ resp_data_short %>%
             se = sd/sqrt(n),
             CI = se * qt(.975, n() - 1)) %>%
   ggplot(aes(x = acc, y = VD, fill=acc)) +
-  geom_point(size = 3, color = "purple") +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), width = 0, size = 1, color = "purple")+
+  geom_bar(stat="identity", color='black') +
+  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), width = 0, size = 1)+
   ggtitle("mean confidence for correct and incorrect responses") +
   theme_bw() +
   plot_theme +
