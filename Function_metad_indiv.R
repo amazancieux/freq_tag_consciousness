@@ -26,7 +26,6 @@
 #####################################
 
 ## Packages
-library(tidyverse)
 library(magrittr)
 library(reshape2)
 library(rjags)
@@ -34,7 +33,6 @@ library(coda)
 library(lattice)
 library(broom)
 library(ggpubr)
-library(ggmcmc)
 
 metad_indiv <- function (nR_S1, nR_S2) {
 
@@ -88,5 +86,5 @@ metad_indiv <- function (nR_S1, nR_S2) {
   }
 
 return(output)
-# return(d1)
-# return(c1)
+return(d1)
+return(c1)
