@@ -25,10 +25,8 @@ plot_theme = theme(
   axis.text.x = element_text(size = 14),
   axis.title.y = element_text(size = 16))
 
-subjects = list(1, 4, 6, 7, 9, 10, 11, 12, 13, 16)
-subjects = list(3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50)
 
-subjects = list(44, 45, 47, 48, 49, 50)
+subjects = list(3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50)
 
 for (sub in subjects){
   
