@@ -2,7 +2,7 @@
 
 
 # Behavioural and EEG analyses of the frequency 
-# tagging  experiment using male and female faces 
+# tagging experiment using male and female faces 
 # images at threshold and supraliminal contrasts 
 
 # Audrey Mazancieux 2024
@@ -25,8 +25,6 @@ plot_theme = theme(
   plot.title = element_text(size = 14),
   axis.text.x = element_text(size = 12),
   axis.title.y = element_text(size = 12))
-
-sub_1_contrast = list(1, 4, 6, 7, 9, 10, 11, 12, 13, 16)
 
 
 ## Import and clean behavioral data -------------------------------------------------------------
@@ -63,16 +61,17 @@ for (sub in sub_1_contrast){
 resp_data2 <- resp_data2 %>% 
   mutate(contrast = ifelse(contrast == '1.5%' | contrast == '1.50%', '1.5%', '1%'))
 
+# save clean dataset
+write.csv(resp_data2, "./Behaviour/Results/behaviour_clean_data.csv")
 
-## First-order task ------------------------------------------------------
+
+## First-order performance ------------------------------------------------------
 
 # performance count
 first_order <- resp_data2 %>% 
   mutate(count = 1) %>% 
   dcast(Pp + contrast ~ accuracy, value.var = "count", sum) %>% 
   mutate(performance = Correct/(Correct+Incorrect))
-
-write.csv(first_order, "./Behaviour/Results/first_order.csv")
 
 n <- length(unique(first_order$Pp))
 
@@ -96,6 +95,33 @@ first_order %>%
   ylab("Performance")
 
 dev.off()
+
+# analyses
+mean(first_order$performance[first_order$contrast == '1%'])
+mean(first_order$performance[first_order$contrast == '1.5%'])
+sd(first_order$performance[first_order$contrast == '1%'])
+sd(first_order$performance[first_order$contrast == '1.5%'])
+
+first_order2 <- first_order %>% 
+  dcast(Pp ~ contrast, value.var = 'performance') %>% 
+  mutate(perf_diff = `1.5%` - `1%`,
+         perf_1_to_0 = `1%` - 0.50,
+         perf_1.5_to_0 = `1.5%` - 0.50)
+mod <- lm(perf_diff ~ 1, data = first_order2)
+mod1 <- lm(perf_1_to_0 ~ 1, data = first_order2)
+mod2 <- lm(perf_1.5_to_0 ~ 1, data = first_order2)
+
+qqnorm(residuals(mod))
+qqline(residuals(mod))
+
+data.frame(x = residuals(mod)) %>%
+  ggplot(aes(x = x)) +
+  geom_histogram()
+shapiro.test(residuals(mod))
+
+summary(mod)
+summary(mod1)
+summary(mod2)
 
 
 ## Subjective visibility -------------------------------------------------
