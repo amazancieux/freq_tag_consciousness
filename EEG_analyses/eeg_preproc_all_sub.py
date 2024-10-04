@@ -12,23 +12,11 @@ import glob
 import mne
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import pickle
 from mne.channels import make_standard_montage
-from meegkit import ress
 import scipy.signal as ss
 from meegkit.utils import snr_spectrum
 from pyprep.find_noisy_channels import NoisyChannels
-
-
-# Define function
-def find_nearest_index(array, target_value):
-    '''Function which selects the index of value in a numpy array that is the 
-    nearest to the target value
-    '''
-    array = np.asarray(array)
-    return (np.abs(array - target_value)).argmin()
-
 
 # =============================================================================
 
@@ -42,8 +30,6 @@ BEHAV_DIR = 'Behaviour'
 SUBJECTS = [3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50]
 N_STIM_PER_SEQ = 240
 RESAMPLE_FREQ = 250
-FACE_FREQ = 1.2
-IMAGE_FREQ = 6
 
 bads_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 
@@ -120,19 +106,9 @@ for subject in SUBJECTS :
         snr_contrast_all_sub[f'sub-{subject}'][contrast].append(snr)
     
     
-    ## Get indexes for frequencies of interest
-
-    # faces
-    idx_1_2hz = find_nearest_index(bins, FACE_FREQ)
-    idx_2_4hz = find_nearest_index(bins, FACE_FREQ*2) 
-    idx_3_6hz = find_nearest_index(bins, FACE_FREQ*3) 
-    
-    # images
-    idx_6hz = find_nearest_index(bins, FACE_FREQ)
-    idx_12hz = find_nearest_index(bins, FACE_FREQ*2) 
-    idx_18hz = find_nearest_index(bins, FACE_FREQ*3) 
+    # save frequencies
+    snr_contrast_all_sub['frequency_bins'] = bins
                                           
-
     ## Estimate SNR for mean epochs per PAS
     
     # Get snr for each PAS and of each contrast
@@ -289,5 +265,4 @@ with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'SNR_conf_all_subjects.pickl
     
 with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'epochs_all_subjects.pickle'), 'wb') as f:
     pickle.dump(epochs_all_sub, f)
-    
-    
+
