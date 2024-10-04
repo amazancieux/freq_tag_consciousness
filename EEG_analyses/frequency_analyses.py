@@ -219,7 +219,7 @@ snr_roi_pas = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS'
 
 ## Get snr per PAS at each frequency, subject, and ROI
 
-for subject in snr_pas_all_sub.keys(): 
+for sub in snr_pas_all_sub.keys(): 
                
     for roi in range(len(idx_roi)): 
         contrasts = snr_pas_all_sub[sub].keys()
@@ -237,7 +237,7 @@ for subject in snr_pas_all_sub.keys():
                     snr_12 = snr_pas_all_sub[sub][contrast][pas_num][0][idx_12hz, idx_roi[roi]]
                     snr_18 = snr_pas_all_sub[sub][contrast][pas_num][0][idx_18hz, idx_roi[roi]]
                      
-                    new_data = [{'Subject': subject,
+                    new_data = [{'Subject': sub,
                                  'Contrast': contrast, 
                                  'PAS': pas_num,
                                  '1_2Hz': np.mean(snr_1, axis=0),
@@ -262,7 +262,7 @@ snr_roi_pas['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT2_SNR_PAS_all_
 
 snr_roi_acc = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '2_4Hz', '3_6Hz', '6Hz', '12Hz', '18Hz']) for roi in range(len(idx_roi))}
 accuracy = snr_acc_all_sub['sub-3']['1%'].keys()
-for subject in snr_pas_all_sub.keys(): 
+for sub in snr_pas_all_sub.keys(): 
                
     for roi in range(len(idx_roi)):   
         contrasts = snr_pas_all_sub[sub].keys()
@@ -280,7 +280,7 @@ for subject in snr_pas_all_sub.keys():
                     snr_12 = snr_acc_all_sub[sub][contrast][acc][0][idx_12hz, idx_roi[roi]]
                     snr_18 = snr_acc_all_sub[sub][contrast][acc][0][idx_18hz, idx_roi[roi]]
                      
-                    new_data = [{'Subject': subject,
+                    new_data = [{'Subject': sub,
                                  'Contrast': contrast, 
                                  'Accuracy': acc,
                                  '1_2Hz': np.mean(snr_1, axis=0),
@@ -304,7 +304,7 @@ snr_roi_acc['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT2_SNR_acc_all_
 ## Get snr per confidence rating at each frequency, subject, and ROI
 
 snr_roi_conf = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '2_4Hz', '3_6Hz', '6Hz', '12Hz', '18Hz']) for roi in range(len(idx_roi))}
-for subject in snr_pas_all_sub.keys(): 
+for sub in snr_pas_all_sub.keys(): 
                
     for roi in range(len(idx_roi)):   
         contrasts = snr_pas_all_sub[sub].keys()
@@ -322,7 +322,7 @@ for subject in snr_pas_all_sub.keys():
                     snr_12 = snr_conf_all_sub[sub][contrast][conf][0][idx_12hz, idx_roi[roi]]
                     snr_18 = snr_conf_all_sub[sub][contrast][conf][0][idx_18hz, idx_roi[roi]]
                      
-                    new_data = [{'Subject': subject,
+                    new_data = [{'Subject': sub,
                                  'Contrast': contrast, 
                                  'Confidence': conf,
                                  '1_2Hz': np.mean(snr_1, axis=0),
