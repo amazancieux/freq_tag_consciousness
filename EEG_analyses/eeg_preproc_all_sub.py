@@ -20,6 +20,7 @@ import scipy.signal as ss
 from meegkit.utils import snr_spectrum
 from pyprep.find_noisy_channels import NoisyChannels
 
+
 # Define function
 def find_nearest_index(array, target_value):
     '''Function which selects the index of value in a numpy array that is the 
@@ -40,6 +41,9 @@ BEHAV_DIR = 'Behaviour'
 
 SUBJECTS = [3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50]
 N_STIM_PER_SEQ = 240
+RESAMPLE_FREQ = 250
+FACE_FREQ = 1.2
+IMAGE_FREQ = 6
 
 bads_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 
@@ -64,7 +68,6 @@ for subject in SUBJECTS :
     
     # downsampling
     events = mne.find_events(raw_data, shortest_event = 1)
-    RESAMPLE_FREQ = 250
     raw_data, events = raw_data.resample(RESAMPLE_FREQ, events=events)
     
     # set the 32 system BioSemi channel positions on the data
@@ -92,8 +95,6 @@ for subject in SUBJECTS :
     epochs = mne.Epochs(raw_data, events, event_id=10, tmin=1.667, tmax=41.667, baseline=None)
     epoch_data = epochs.get_data()
     
-    # define stimulation frequency
-    FACE_FREQ = 1.2
     n_trial = len(epoch_data)
      
     # =========================================================================
@@ -117,6 +118,19 @@ for subject in SUBJECTS :
         
         snr = snr_spectrum(psd, bins, skipbins=2, n_avg=10)
         snr_contrast_all_sub[f'sub-{subject}'][contrast].append(snr)
+    
+    
+    ## Get indexes for frequencies of interest
+
+    # faces
+    idx_1_2hz = find_nearest_index(bins, FACE_FREQ)
+    idx_2_4hz = find_nearest_index(bins, FACE_FREQ*2) 
+    idx_3_6hz = find_nearest_index(bins, FACE_FREQ*3) 
+    
+    # images
+    idx_6hz = find_nearest_index(bins, FACE_FREQ)
+    idx_12hz = find_nearest_index(bins, FACE_FREQ*2) 
+    idx_18hz = find_nearest_index(bins, FACE_FREQ*3) 
                                           
 
     ## Estimate SNR for mean epochs per PAS
@@ -215,24 +229,46 @@ for subject in SUBJECTS :
     n_seq = len(epochs_behav_data) / n_epoch_per_seq # check number of sequences
     print(f'Number of sequences = {n_seq}')
     
-    # get epoch per seq
-    epoch_data_all_seq = []
-    for seq in range(int(n_seq)): 
+    # only keep relevany events
+    events_clean = pd.DataFrame({'events': events[:,2]})
+    events_clean = events_clean.drop(events_clean[events_clean.events == 10].index)
+    events_clean = events_clean.drop(events_clean[events_clean.events == 65536].index)
+        
+    # get epoch per sequences and average
+    epoch_data_all_seq = {'1%': {},
+                          '1.5%': {}}
+    for seq in range(0, int(n_seq)): 
+        
+        epoch_data_all_seq['1%'] = {'nonfaces': [], 'faces': [], 'responses': []}
+        epoch_data_all_seq['1.5%'] = {'nonfaces': [], 'faces': [], 'responses': []}
+        
         epoch_data_seq = epochs_behav_data[(seq*n_epoch_per_seq):(seq*n_epoch_per_seq + n_epoch_per_seq), :, :]
-        epoch_data_all_seq.append(epoch_data_seq)
-    
+        event_seq = np.array(events_clean['events'])[(seq*n_epoch_per_seq):(seq*n_epoch_per_seq + n_epoch_per_seq)]
+        nonfaces_idx = np.where(event_seq == 20)
+        faces_idx = np.where(event_seq == 21)
+        
+        epoch_nonfaces = epoch_data_seq[nonfaces_idx, :, :].mean(axis=0)
+        epoch_faces = epoch_data_seq[faces_idx, :, :].mean(axis=0)
+      
+        if np.array(behav['contrast'])[seq] == '1%':
+            epoch_data_all_seq['1%']['nonfaces'].append(epoch_nonfaces.mean(axis=0))
+            epoch_data_all_seq['1%']['faces'].append(epoch_faces.mean(axis=0))
+            epoch_data_all_seq['1%']['responses'].append(epoch_data_seq[-3:])
+        else:
+            epoch_data_all_seq['1.5%']['nonfaces'].append(epoch_nonfaces.mean(axis=0))
+            epoch_data_all_seq['1.5%']['faces'].append(epoch_faces.mean(axis=0))
+            epoch_data_all_seq['1.5%']['responses'].append(epoch_data_seq[-3:])
+                   
     # create data and info dictionnary 
-    data_sub_dict = {'contrast_seq': np.array(behav['contrast']),
-                     'data_seq': epoch_data_all_seq,
+    data_sub_dict = {'data': epoch_data_all_seq,
                      'channels': raw_data.info['ch_names'],
                      'time': epochs_behav.times}
     # save
     epochs_all_sub[f'sub-{subject}'] = data_sub_dict
 
 
-    
-
-    
+# =============================================================================    
+   
 ## Save outputs
 
 bads_all_sub['channels'] = raw_data.info['ch_names']
@@ -252,6 +288,6 @@ with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'SNR_conf_all_subjects.pickl
     pickle.dump(snr_conf_all_sub, f)
     
 with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'epochs_all_subjects.pickle'), 'wb') as f:
-    pickle.dump(snr_conf_all_sub, f)
+    pickle.dump(epochs_all_sub, f)
     
     
