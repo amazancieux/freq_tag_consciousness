@@ -198,7 +198,7 @@ plt.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "spectrogram_1.5%.png"),
 # ROI5 = ['P5', 'P7', 'P9']
 
 # from Quek & de Heering (2024)
-ROI_OCC = ['Iz', 'Oz', 'O1', 'O2'] # for 6 Hz
+ROI_OCC = ['Oz', 'O1', 'O2'] # for 6 Hz
 ROI_OT_1 = ['O1', 'PO3', 'PO7', 'P7', 'P9'] # face left
 ROI_OT_2 = ['O2', 'PO4', 'PO8', 'P8', 'P10'] # face right
                                                                
