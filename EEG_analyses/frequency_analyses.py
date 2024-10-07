@@ -4,16 +4,19 @@ Created on Thu Sep 19 09:21:21 2024
 
 @author: Audrey Mazancieux
 
-Frequency analyses: extract SNR at given frequencies and plots
+Frequency analyses: extract SNR at given frequencies and plots.
 """
 
 import os
+import mne
+import glob
 import numpy as np
 import pandas as pd
-import seaborn as sns
 import pickle
 from mne.viz import plot_topomap
 from matplotlib import pyplot as plt
+import scipy.signal as ss
+from meegkit.utils import snr_spectrum
 
 # define function
 def find_nearest_index(array, target_value):
@@ -22,6 +25,7 @@ def find_nearest_index(array, target_value):
     '''
     array = np.asarray(array)
     return (np.abs(array - target_value)).argmin()
+
 
 # =============================================================================
 
@@ -32,29 +36,140 @@ DATA_DIR = 'Data'
 RESULT_DIR = 'Results'
 BEHAV_DIR = 'Behaviour'
 
+SUBJECTS = [3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51]
+N_STIM_PER_SEQ = 240
+RESAMPLE_FREQ = 250
 FACE_FREQ = 1.2
 IMAGE_FREQ = 6
 
 # =============================================================================
 
-## Load SNR data from preproc
+## Create snr dictionaries
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'bads_all_subjects.pickle'), 'rb') as f:
-    bads_all_sub = pickle.load(f) 
-    
-with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'SNR_contrast_all_subjects.pickle'), 'rb') as f:
-    snr_contrast_all_sub = pickle.load(f)
+snr_contrast_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
+snr_pas_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
+snr_acc_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
+snr_conf_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'SNR_pas_all_subjects.pickle'), 'rb') as f:
-    snr_pas_all_sub = pickle.load(f) 
+
+## Load infos
+
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'eeg_info_all_subjects.pickle'), 'rb') as f:
+    info_all_sub = pickle.load(f)    
+
+
+for subject in SUBJECTS : 
     
-with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'SNR_acc_all_subjects.pickle'), 'rb') as f:
-    snr_acc_all_sub = pickle.load(f) 
+    ## Epoch data
     
-with open(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, 'SNR_conf_all_subjects.pickle'), 'rb') as f:
-    snr_conf_all_sub = pickle.load(f) 
+    # import preprocessed data 
+    data_file = glob.glob(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f"*{subject}*preproc.fif"))[0]
+    data = mne.io.read_raw_fif(data_file)
+            
+    # epochs entire sequences (excluding fade periods)
+    events = info_all_sub[f'sub-{subject}']['events']
+    epochs = mne.Epochs(data, events, event_id=10, tmin=1.667, tmax=41.667, baseline=None)
+    epoch_data = epochs.get_data()
+    
+    n_trial = len(epoch_data)
+      
+    
+    ## Estimate SNR for each contrast
+    
+    # get behaviour
+    behav_file = glob.glob(os.path.join(ROOT_DIR, BEHAV_DIR, 'Data', f'sub-{subject}', 'Freq*preproc.csv'))[0]
+    behav = pd.read_csv(behav_file)
+    
+    contrasts = behav['contrast'].unique()
+    snr_contrast_all_sub[f'sub-{subject}'] =  {contrast: [] for contrast in contrasts}
+    
+    for contrast in contrasts:
+        
+        idx = np.where(behav['contrast'] == contrast)[0]
+        epoch_data_pas = epoch_data[idx, :, :].mean(axis=0)
+        bins, psd = ss.welch(np.squeeze(epoch_data_pas.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
+        
+        snr = snr_spectrum(psd, bins, skipbins=2, n_avg=10)
+        snr_contrast_all_sub[f'sub-{subject}'][contrast].append(snr)
+    
+                                          
+    ## Estimate SNR for mean epochs per PAS
+    
+    # Get snr for each PAS and of each contrast
+    snr_pas_all_sub[f'sub-{subject}'] = {contrast: [] for contrast in contrasts}
+    
+    for contrast in contrasts:
    
+        snr_pas_all_sub[f'sub-{subject}'][contrast] = {pas_num: [] for pas_num in range(1, 5)}
+        for pas_num in range(1, 5):
+            
+            # get sequence indexes
+            idx_pas = np.where((behav['contrast'] == contrast) & (behav['pas_score'] == pas_num))[0]
+
+            if len(idx_pas) != 0:
+                
+                # only keep relevant epochs
+                epoch_data_pas = epoch_data[idx_pas, :, :].mean(axis=0)
+                
+                # get psd 
+                bins, psd = ss.welch(np.squeeze(epoch_data_pas.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
+                
+                # get snr
+                snr_pas = snr_spectrum(psd, bins, skipbins=2, n_avg=10)
+                snr_pas_all_sub[f'sub-{subject}'][contrast][pas_num].append(snr_pas)  
+                
     
+    ## Estimate SNR for mean epochs per accuracy
+    
+    accuracy = behav['accuracy'].unique()
+    snr_acc_all_sub[f'sub-{subject}'] = {contrast: [] for contrast in contrasts}
+    
+    for contrast in contrasts:
+   
+        snr_acc_all_sub[f'sub-{subject}'][contrast] = {acc: [] for acc in accuracy}
+        for acc in accuracy:
+            
+            # get sequence indexes
+            idx_acc = np.where((behav['contrast'] == contrast) & (behav['accuracy'] == acc))[0]
+                    
+            if len(idx_acc) != 0:
+                
+                # only keep relevant epochs
+                epoch_data_acc = epoch_data[idx_acc, :, :].mean(axis=0)
+                
+                # get psd and snr
+                bins, psd = ss.welch(np.squeeze(epoch_data_acc.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
+                
+                # get snr
+                snr_pas = snr_spectrum(psd, bins, skipbins=2, n_avg=10)
+                snr_acc_all_sub[f'sub-{subject}'][contrast][acc].append(snr_pas) 
+                
+                     
+    ## Estimate SNR for mean epochs per confidence rating
+            
+    snr_conf_all_sub[f'sub-{subject}'] = {contrast: [] for contrast in contrasts}
+    
+    for contrast in contrasts:
+   
+        snr_conf_all_sub[f'sub-{subject}'][contrast] = {conf: [] for conf in range(1, 5)}
+        for conf in range(1, 5):
+            
+            # get sequence indexes
+            idx_conf = np.where((behav['contrast'] == contrast) & (behav['conf_score'] == conf))[0]
+                    
+            if len(idx_conf) != 0:
+                
+                # only keep relevant epochs
+                epoch_data_conf = epoch_data[idx_conf, :, :].mean(axis=0)
+                
+                # get psd 
+                bins, psd = ss.welch(np.squeeze(epoch_data_conf.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
+                
+                # get snr
+                snr_pas = snr_spectrum(psd, bins, skipbins=2, n_avg=10)
+                snr_conf_all_sub[f'sub-{subject}'][contrast][conf].append(snr_pas) 
+  
+        
 # =============================================================================
 
 ## Plot topographies 
@@ -116,7 +231,7 @@ fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "Topo_1.2_HZ_SNR_1.5%.pn
 
 # image topography 6 Hz at 1%
 fig,(ax) = plt.subplots(figsize=(10, 10))
-im, cm = plot_topomap(snr_2_4_C1, epochs.info, axes=ax)
+im, cm = plot_topomap(snr_6_C1, epochs.info, axes=ax)
 ax_x_start = 0.92
 ax_x_width = 0.02
 ax_y_start = 0.25
@@ -129,7 +244,7 @@ fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "Topo_2.4_HZ_SNR_1%.png"
 
 # image topography 6 Hz at 1.5%
 fig,(ax) = plt.subplots(figsize=(10, 10))
-im, cm = plot_topomap(snr_2_4_C2, epochs.info, axes=ax)
+im, cm = plot_topomap(snr_6_C2, epochs.info, axes=ax)
 ax_x_start = 0.92
 ax_x_width = 0.02
 ax_y_start = 0.25
@@ -145,7 +260,7 @@ fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "Topo_2.4_HZ_SNR_1.5%.pn
 
 # get data for electrods for interest
 SELECTED_ELECTRODS = ['Iz', 'Oz', 'O2', 'PO4', 'PO8', 'O1', 'PO3', 'PO7', 'P6', 'P8', 'P10', 'P5', 'P7', 'P9'] 
-idx_ROIs = [bads_all_sub['channels'].index(electrod) for electrod in SELECTED_ELECTRODS]  
+idx_ROIs = [data.info['ch_names'].index(electrod) for electrod in SELECTED_ELECTRODS]  
 
 snr_C1 = []
 snr_C2 = []
@@ -190,27 +305,14 @@ plt.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "spectrogram_1.5%.png"),
    
 ## Get SNR for each ROI
 
-# from preprint
-# ROI1 = ['Iz', 'Oz'] 
-# ROI2 = ['O2', 'PO4', 'PO8']
-# ROI3 = ['O1', 'PO3', 'PO7'] 
-# ROI4 = ['P6', 'P8', 'P10'] 
-# ROI5 = ['P5', 'P7', 'P9']
-
 # from Quek & de Heering (2024)
 ROI_OCC = ['Oz', 'O1', 'O2'] # for 6 Hz
 ROI_OT_1 = ['O1', 'PO3', 'PO7', 'P7', 'P9'] # face left
 ROI_OT_2 = ['O2', 'PO4', 'PO8', 'P8', 'P10'] # face right
                                                                
-# idx_ROI1 = [bads_all_sub['channels'].index(electrod) for electrod in ROI1]
-# idx_ROI2 = [bads_all_sub['channels'].index(electrod) for electrod in ROI2]
-# idx_ROI3 = [bads_all_sub['channels'].index(electrod) for electrod in ROI3]
-# idx_ROI4 = [bads_all_sub['channels'].index(electrod) for electrod in ROI4]
-# idx_ROI5 = [bads_all_sub['channels'].index(electrod) for electrod in ROI5]  
-
-idx_ROI_OCC = [bads_all_sub['channels'].index(electrod) for electrod in ROI_OCC]
-idx_ROI_OT_1 = [bads_all_sub['channels'].index(electrod) for electrod in ROI_OT_1]
-idx_ROI_OT_2 = [bads_all_sub['channels'].index(electrod) for electrod in ROI_OT_2]
+idx_ROI_OCC = [data.info['ch_names'].index(electrod) for electrod in ROI_OCC]
+idx_ROI_OT_1 = [data.info['ch_names'].index(electrod) for electrod in ROI_OT_1]
+idx_ROI_OT_2 = [data.info['ch_names'].index(electrod) for electrod in ROI_OT_2]
 
 # idx_roi = [idx_ROI1, idx_ROI2, idx_ROI3, idx_ROI4, idx_ROI5]
 idx_roi = [idx_ROI_OCC, idx_ROI_OT_1, idx_ROI_OT_2]
@@ -254,9 +356,7 @@ for sub in snr_pas_all_sub.keys():
 snr_roi_pas['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OCC_SNR_PAS_all_sub.csv'), index=False)  
 snr_roi_pas['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT1_SNR_PAS_all_sub.csv'), index=False)  
 snr_roi_pas['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT2_SNR_PAS_all_sub.csv'), index=False)  
-# snr_roi_pas['roi4'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_4_SNR_PAS_all_sub.csv'), index=False)  
-# snr_roi_pas['roi5'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_5_SNR_PAS_all_sub.csv'), index=False)  
-                      
+                   
 
 ## Get snr per accuracy at each frequency, subject, and ROI
 
@@ -297,8 +397,6 @@ for sub in snr_pas_all_sub.keys():
 snr_roi_acc['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OCC_SNR_acc_all_sub.csv'), index=False)  
 snr_roi_acc['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT1_SNR_acc_all_sub.csv'), index=False)  
 snr_roi_acc['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT2_SNR_acc_all_sub.csv'), index=False)  
-# snr_roi_acc['roi4'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_4_SNR_acc_all_sub.csv'), index=False)  
-# snr_roi_acc['roi5'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_5_SNR_acc_all_sub.csv'), index=False) 
 
     
 ## Get snr per confidence rating at each frequency, subject, and ROI
@@ -339,6 +437,3 @@ for sub in snr_pas_all_sub.keys():
 snr_roi_conf['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OCC_SNR_conf_all_sub.csv'), index=False)  
 snr_roi_conf['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT1_SNR_conf_all_sub.csv'), index=False)  
 snr_roi_conf['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_OT2_SNR_conf_all_sub.csv'), index=False)  
-# snr_roi_conf['roi4'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_4_SNR_conf_all_sub.csv'), index=False)  
-# snr_roi_conf['roi5'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, 'roi_5_SNR_conf_all_sub.csv'), index=False)  
-
