@@ -44,11 +44,10 @@ for subject in SUBJECTS :
     
     # downsampling
     events = mne.find_events(raw_data, shortest_event = 1)
-    info_all_sub[f'sub-{subject}']['events'] = events
     raw_data, events = raw_data.resample(RESAMPLE_FREQ, events=events)
     
     # set the 32 system BioSemi channel positions on the data
-    raw_data.pick_types(meg=False, eeg=True)
+    #raw_data.pick_types(meg=False, eeg=True)
     montage = make_standard_montage('biosemi64')
     new_names = dict(zip(raw_data.ch_names, montage.ch_names))
     raw_data.rename_channels(new_names)
@@ -97,6 +96,6 @@ for subject in SUBJECTS :
     
 ## Save output
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'eeg_info_all_subjects.pickle'), 'wb') as f:
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'eeg_preproc_info_all_subjects.pickle'), 'wb') as f:
     pickle.dump(info_all_sub, f)     
     
