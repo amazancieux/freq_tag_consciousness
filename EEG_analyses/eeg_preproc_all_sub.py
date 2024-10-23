@@ -10,7 +10,6 @@ Preprocessing for EEG data of the frequency tagging task.
 import os
 import glob
 import mne
-import numpy as np
 import pickle
 from mne.channels import make_standard_montage
 from pyprep.find_noisy_channels import NoisyChannels
@@ -28,7 +27,7 @@ SUBJECTS = [3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 3
 N_STIM_PER_SEQ = 240
 RESAMPLE_FREQ = 250
 
-info_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
+bads_electrods = {f'sub-{sub}': {} for sub in SUBJECTS}
 
 
 # =============================================================================
@@ -60,33 +59,10 @@ for subject in SUBJECTS :
     noisy= NoisyChannels(raw_data)
     noisy.find_all_bads()
     bad_chs = noisy.get_bads()
-    info_all_sub[f'sub-{subject}']['bad_chs'] = bad_chs
+    bads_electrods[f'sub-{subject}'] = bad_chs
     raw_data.info['bads'] = bad_chs
     raw_data = raw_data.interpolate_bads()
-        
-    # # perform Independent Component Analysis (ICA) on the copied data
-    # ica = mne.preprocessing.ICA(random_state=21, max_iter='auto')
-    # ica.fit(raw_data)
-
-    # # set the channel types for EOG channels
-    # raw_data.set_channel_types({'Fp1': 'eog', 'Fp2': 'eog'})
-
-    # # find Independent Components that match the EOG pattern
-    # eog_indices, eog_scores = ica.find_bads_eog(raw_data, measure='correlation', threshold=0.5) 
-    # ica.exclude = eog_indices
-    # info_all_sub[f'sub-{subject}']['bad_ica'] = eog_indices
-
-    # # set the channel types back to EEG channels
-    # raw_data.set_channel_types({'Fp1': 'eeg', 'Fp2': 'eeg'})
-
-    # # if there are EOG components to exclude, plot diagnostics and save the figures
-    # if len(eog_indices) > 0:
-    #     ica.apply(raw_data)
-    #     fig = ica.plot_components(picks=np.arange(ica.n_components_), show = False) # create figures of the components with the one removed
-    #     fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f'sub-{subject}_ICA.png'))
-
-    # del ica
-    
+           
     # re-referencing to a robust average
     raw_data.set_eeg_reference('average') 
 
@@ -96,6 +72,6 @@ for subject in SUBJECTS :
     
 ## Save output
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'eeg_preproc_info_all_subjects.pickle'), 'wb') as f:
-    pickle.dump(info_all_sub, f)     
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'bad_electodes_all_subjects.pickle'), 'wb') as f:
+    pickle.dump(bads_electrods, f)     
     
