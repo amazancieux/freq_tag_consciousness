@@ -64,28 +64,28 @@ for subject in SUBJECTS :
     raw_data.info['bads'] = bad_chs
     raw_data = raw_data.interpolate_bads()
         
-    # perform Independent Component Analysis (ICA) on the copied data
-    ica = mne.preprocessing.ICA(random_state=21, max_iter='auto')
-    ica.fit(raw_data)
+    # # perform Independent Component Analysis (ICA) on the copied data
+    # ica = mne.preprocessing.ICA(random_state=21, max_iter='auto')
+    # ica.fit(raw_data)
 
-    # set the channel types for EOG channels
-    raw_data.set_channel_types({'Fp1': 'eog', 'Fp2': 'eog'})
+    # # set the channel types for EOG channels
+    # raw_data.set_channel_types({'Fp1': 'eog', 'Fp2': 'eog'})
 
-    # find Independent Components that match the EOG pattern
-    eog_indices, eog_scores = ica.find_bads_eog(raw_data, measure='correlation', threshold=0.5) 
-    ica.exclude = eog_indices
-    info_all_sub[f'sub-{subject}']['bad_ica'] = eog_indices
+    # # find Independent Components that match the EOG pattern
+    # eog_indices, eog_scores = ica.find_bads_eog(raw_data, measure='correlation', threshold=0.5) 
+    # ica.exclude = eog_indices
+    # info_all_sub[f'sub-{subject}']['bad_ica'] = eog_indices
 
-    # set the channel types back to EEG channels
-    raw_data.set_channel_types({'Fp1': 'eeg', 'Fp2': 'eeg'})
+    # # set the channel types back to EEG channels
+    # raw_data.set_channel_types({'Fp1': 'eeg', 'Fp2': 'eeg'})
 
-    # if there are EOG components to exclude, plot diagnostics and save the figures
-    if len(eog_indices) > 0:
-        ica.apply(raw_data)
-        fig = ica.plot_components(picks=np.arange(ica.n_components_), show = False) # create figures of the components with the one removed
-        fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f'sub-{subject}_ICA.png'))
+    # # if there are EOG components to exclude, plot diagnostics and save the figures
+    # if len(eog_indices) > 0:
+    #     ica.apply(raw_data)
+    #     fig = ica.plot_components(picks=np.arange(ica.n_components_), show = False) # create figures of the components with the one removed
+    #     fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f'sub-{subject}_ICA.png'))
 
-    del ica
+    # del ica
     
     # re-referencing to a robust average
     raw_data.set_eeg_reference('average') 
