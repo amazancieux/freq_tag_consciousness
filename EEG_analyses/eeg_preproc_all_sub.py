@@ -97,6 +97,6 @@ for subject in SUBJECTS :
     
 ## Save output
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'bad_electodes_all_subjects.pickle'), 'wb') as f:
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'info_all_subjects.pickle'), 'wb') as f:
     pickle.dump(info_all_sub, f)     
     
