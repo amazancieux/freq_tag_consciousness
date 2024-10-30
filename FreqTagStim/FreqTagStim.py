@@ -2,14 +2,12 @@
 """
 Created on Wed Jan 10 10:52:01 2024
 
-SESSION 2
--------------------------------------------------------------------------------
 This task is a frequency tagging task which present sequences of picture stimuli 
 degraded in several level of contrasts and with 2AFC and PAS questions at the 
 end of each sequence. EEG option available. 
 Presentation of stimuli corresponds to square wave (on/off).
 
-All modified parameters are in the FreqTagStim_parameters.py 
+Parameters are in the FreqTagStim_parameters.py 
 
 @author: Audrey Mazancieux
 
@@ -129,7 +127,7 @@ decision_screen = stimuli.TextBox("Avez-vous vu des visages de femmes ou d'homme
 decision_screen.preload()
 
 # PAS screen
-pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impression des visages), 2 (bref un aperçu des visages), 3 (une expérience presque claire des visages) ou 4 (une expérience claire des visages)", 
+pas_screen = stimuli.TextBox("Impression des visages? Appuyez sur 1 (aucune impression des visages), 2 (un bref aperçu des visages), 3 (une expérience presque claire des visages) ou 4 (une expérience claire des visages)", 
                               size=(600, 600),
                               position=(0,0),
                               text_size=21,
