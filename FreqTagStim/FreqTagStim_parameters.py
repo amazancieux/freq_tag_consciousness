@@ -11,11 +11,8 @@ tagging task.
 
 # Stimuli caracteristics
 
-CONTRASTS            = [1] # one or more contrasts for session 2
-NSEQ_PER_CONTRATS    = 50 
-NSEQ_NOREPORT        = 20
-NSEQ_CONTRAST_SESS1  = 6 # even number for equal male and female seq
-NSEQ_TOT_SESS1       = 50
+CONTRASTS            = [1, 1.5] # contrasts can be 0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 100
+NSEQ_PER_CONTRATS    = 60 
 
 # Presentation caracteristics
 
