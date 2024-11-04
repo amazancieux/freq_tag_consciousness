@@ -356,7 +356,7 @@ for block_num in shuffle_seq:
         else:
             # get expe stim 
             stim = stimuli.Picture(generated_seq['sequence'][block_num][trial_num])             
-            # add fix cross (red or blue depending on condition) 
+            # add fix cross (white or blue depending on condition) 
             if fixcross_vector[trial_num] == 0:                  
                 fixation_cross_white.plot(stim)         
             else:            
