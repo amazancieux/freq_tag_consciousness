@@ -18,13 +18,15 @@ library(magrittr)
 library(reshape2)
 library(broom)
 library(cowplot)
+library(lmerTest)
+library(lattice)
 
 # plot theme
 plot_theme = theme(
-  axis.title.x = element_text(size = 12),
+  axis.title.x = element_text(size = 14),
   plot.title = element_text(size = 14),
-  axis.text.x = element_text(size = 12),
-  axis.title.y = element_text(size = 12))
+  axis.text.x = element_text(size = 14),
+  axis.title.y = element_text(size = 14))
 
 
 ## Import and clean behavioral data -------------------------------------------------------------
@@ -64,6 +66,11 @@ resp_data2 <- resp_data2 %>%
 # save clean dataset
 write.csv(resp_data2, "./Behaviour/Results/behaviour_clean_data.csv")
 
+# get number of trial per subject and PAS response
+trials <- resp_data2 %>% 
+  mutate(count = 1) %>% 
+  dcast(Pp + contrast ~ pas_score, value.var = 'count', sum)
+
 
 ## First-order performance ------------------------------------------------------
 
@@ -88,8 +95,8 @@ first_order %>%
   geom_bar(stat="identity") +
   geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), width = 0, size = 1)+
   ggtitle("Task performance per contrast") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
+  scale_fill_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
   plot_theme +
   xlab("Contrast") +
   ylab("Performance")
@@ -148,13 +155,52 @@ resp_data2 %>%
   geom_bar(stat="identity", position=position_dodge(1)) +
   geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
   ggtitle("mean PAS according to accuracy") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
+  scale_fill_manual(values = c("#003366", "#2C75FF")) +
+  theme_classic() +
   plot_theme +
   xlab("Contrast") +
   ylab("mean PAS")
 
 dev.off()
+
+# analyses
+mean(resp_data2$pas_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
+mean(resp_data2$pas_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Correct'])
+mean(resp_data2$pas_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Incorrect'])
+mean(resp_data2$pas_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Incorrect'])
+
+sd(resp_data2$pas_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
+sd(resp_data2$pas_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Correct'])
+sd(resp_data2$pas_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Incorrect'])
+sd(resp_data2$pas_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Incorrect'])
+
+pas_analyses <- resp_data2 %>% 
+  dcast(Pp ~ accuracy + contrast, value.var = 'pas_score', mean) %>% 
+  mutate(accuracy_main = ((`Correct_1%` + `Correct_1.5%`)/2) - ((`Incorrect_1%` + `Incorrect_1.5%`)/2),
+         contrast_main = ((`Incorrect_1.5%` + `Correct_1.5%`)/2) - ((`Incorrect_1%` + `Correct_1%`)/2),
+         interraction = ((`Correct_1%` + `Incorrect_1.5%`)/2) - ((`Incorrect_1%` + `Correct_1.5%`)/2),
+         acc_diff_1 = `Correct_1%` - `Incorrect_1%`,
+         acc_diff_1_5 = `Correct_1.5%` - `Incorrect_1.5%`)
+
+mod_main_acc <- lm(accuracy_main ~ 1, data = pas_analyses)
+mod_main_cont <- lm(contrast_main ~ 1, data = pas_analyses)
+mod_int <- lm(interraction ~ 1, data = pas_analyses)
+mod_1 <- lm(acc_diff_1 ~ 1, data = pas_analyses)
+mod_1_5 <- lm(acc_diff_1_5 ~ 1, data = pas_analyses)
+
+qqnorm(residuals(mod_main_acc))
+qqline(residuals(mod_main_acc))
+
+data.frame(x = residuals(mod_main_acc)) %>%
+  ggplot(aes(x = x)) +
+  geom_histogram()
+shapiro.test(residuals(mod_main_acc))
+
+summary(mod_main_acc)
+summary(mod_main_cont)
+summary(mod_int)
+summary(mod_1)
+summary(mod_1_5)
 
 
 ## Confidence -----------------------------------------------------------
@@ -172,13 +218,52 @@ resp_data2 %>%
   geom_bar(stat="identity", position=position_dodge(0.93)) +
   geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 1)+
   ggtitle("mean confidence according to accuracy") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
+  scale_fill_manual(values = c("#003366", "#2C75FF")) +
+  theme_classic() +
   plot_theme +
   xlab("Contrast") +
   ylab("mean confidence")
 
 dev.off()
+
+# analyses
+mean(resp_data2$conf_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
+mean(resp_data2$conf_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Correct'])
+mean(resp_data2$conf_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Incorrect'])
+mean(resp_data2$conf_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Incorrect'])
+
+sd(resp_data2$conf_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
+sd(resp_data2$conf_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Correct'])
+sd(resp_data2$conf_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Incorrect'])
+sd(resp_data2$conf_score[resp_data2$contrast == '1.5%' & resp_data2$accuracy == 'Incorrect'])
+
+conf_analyses <- resp_data2 %>% 
+  dcast(Pp ~ accuracy + contrast, value.var = 'conf_score', mean) %>% 
+  mutate(accuracy_main = ((`Correct_1%` + `Correct_1.5%`)/2) - ((`Incorrect_1%` + `Incorrect_1.5%`)/2),
+         contrast_main = ((`Incorrect_1.5%` + `Correct_1.5%`)/2) - ((`Incorrect_1%` + `Correct_1%`)/2),
+         interraction = ((`Correct_1%` + `Incorrect_1.5%`)/2) - ((`Incorrect_1%` + `Correct_1.5%`)/2),
+         acc_diff_1 = `Correct_1%` - `Incorrect_1%`,
+         acc_diff_1_5 = `Correct_1.5%` - `Incorrect_1.5%`)
+
+mod_main_acc <- lm(accuracy_main ~ 1, data = conf_analyses)
+mod_main_cont <- lm(contrast_main ~ 1, data = conf_analyses)
+mod_int <- lm(interraction ~ 1, data = conf_analyses)
+mod_1 <- lm(acc_diff_1 ~ 1, data = conf_analyses)
+mod_1_5 <- lm(acc_diff_1_5 ~ 1, data = conf_analyses)
+
+qqnorm(residuals(mod_main_acc))
+qqline(residuals(mod_main_acc))
+
+data.frame(x = residuals(mod_main_acc)) %>%
+  ggplot(aes(x = x)) +
+  geom_histogram()
+shapiro.test(residuals(mod_main_acc))
+
+summary(mod_main_acc)
+summary(mod_main_cont)
+summary(mod_int)
+summary(mod_1)
+summary(mod_1_5)
 
 
 # raw confidence per PAS and per contrast
@@ -197,8 +282,8 @@ resp_data2 %>%
   geom_bar(stat="identity", position=position_dodge(0.93)) +
   geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 1)+
   ggtitle("mean confidence according to contrast and PAS") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
+  scale_fill_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
   plot_theme +
   xlab("PAS") +
   ylab("mean confidence")
@@ -292,332 +377,37 @@ for (n in 1:(nsubj)) {
 
 write.csv(metad, "./Behaviour/Results/output_fit_individual_metad.csv")
 
+mean(metad$Mratio[metad$contrast == 1])
+mean(metad$Mratio[metad$contrast == 2])
+sd(metad$Mratio[metad$contrast == 1])
+sd(metad$Mratio[metad$contrast == 2])
 
-# Plot M-ratio
+metad2 <- metad %>% 
+  dcast(Pp ~ contrast, value.var = 'Mratio') %>% 
+  mutate(diff = `2` - `1`)
 
-metad %>%
-  group_by(Pp, contrast) %>%
-  summarise(Mratio = mean(Mratio)) %>% 
-  group_by(contrast) %>%
-  summarise(VD = mean(Mratio),
-            sd = sd(Mratio),
-            se = sd/sqrt(nsubj),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = as.factor(contrast), y = VD)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 1)+
-  ggtitle("mean M-ratio according to contrast") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("contrast") +
-  ylab("mean M-ratio")
+mod_diff <- lm(diff ~ 1, data = metad2)
+mod_1 <- lm(`1` ~ 1, data = metad2)
+mod_1_5 <- lm(`2` ~ 1, data = metad2)
 
+summary(mod_diff)
+summary(mod_1)
+summary(mod_1_5)
 
+cor.test(metad$Mratio[metad$contrast == 1], metad$d[metad$contrast == 1])
 
-## EEG RESS components and behavior ------------------------------------------------------
-
-# get data
-files <-
-  list.files("./EEG_analyses/Data", recursive = TRUE) %>% 
-  as_data_frame()
-
-files <- files %>% 
-  filter(str_detect(value, regex(".csv$"))) %>% 
-  filter(str_detect(value, regex("ress")))
-
-# load  data
-ress_data <- data.frame()
-
-for (i in files$value){
-  pp_data <- read_csv(file.path("./EEG_analyses/Data", i))
-  ress_data %<>% rbind(pp_data) 
-}
-
-ress_data %<>%
-  mutate(contrast = case_when(
-    contrast == '1%' ~ '1%',
-    contrast == '1.5%' | contrast == '1.50%' ~ '1.5%'))
-
-
-# Plot RESS values 
-
-ress_data2 <- ress_data
-for (sub in sub_1_contrast){
-  ress_data2 <- ress_data2 %>% 
-    filter(subject != sub) 
-}
-
-n <- length(unique(ress_data2$subject))
-
-png(file="./EEG_analyses/Results/ress_1_2_pas.png", width=6, height=6, units="in", res=300)
-
-ress_data2 %>%
-  group_by(subject, pas_score, contrast) %>%
-  summarise(RESS_1_2 = mean(as.numeric(RESS_1_2))) %>% 
-  group_by(contrast, pas_score) %>%
-  summarise(VD = mean(RESS_1_2),
-            sd = sd(RESS_1_2),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = pas_score, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 1)+
-  ggtitle("RESS for 1.2 Hz according to contrast and PAS") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("PAS ratings") +
-  ylab("mean RESS for 1.2 Hz")
-
-dev.off()
-
-png(file="./EEG_analyses/Results/ress_2_4_pas.png", width=6, height=6, units="in", res=300)
-
-ress_data2 %>%
-  group_by(subject, pas_score, contrast) %>%
-  summarise(RESS_2_4 = mean(as.numeric(RESS_2_4))) %>% 
-  group_by(contrast, pas_score) %>%
-  summarise(VD = mean(RESS_2_4),
-            sd = sd(RESS_2_4),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = pas_score, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 1)+
-  ggtitle("RESS for 2.4 Hz according to contrast and PAS") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("PAS ratings") +
-  ylab("mean RESS for 2.4 Hz")
-
-dev.off()
-
-png(file="./EEG_analyses/Results/ress_3_6_pas.png", width=6, height=6, units="in", res=300)
-
-ress_data2 %>%
-  group_by(subject, pas_score, contrast) %>%
-  summarise(RESS_3_6 = mean(as.numeric(RESS_3_6))) %>% 
-  group_by(contrast, pas_score) %>%
-  summarise(VD = mean(RESS_3_6),
-            sd = sd(RESS_3_6),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = pas_score, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 1)+
-  ggtitle("RESS for 3.6 Hz according to contrast and PAS") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("PAS ratings") +
-  ylab("mean RESS for 3.6 Hz")
-
-dev.off()
-
-
-# compute linear regression for each participants between RESS and PAS
-
-coeff_all <- data.frame()
-for (contr in unique(ress_data2$contrast)){
-  
-  for (sub in unique(ress_data2$subject)){
-    
-    data_sub <- ress_data2 %>% 
-      filter(subject == sub & contrast == contr)
-    
-    cor <- cor.test(data_sub$RESS_2_4, data_sub$pas_score)
-    r <- cor[['estimate']]
-    
-    model <- lm(RESS_2_4 ~ pas_score, data=data_sub)
-    beta <- data.frame(beta = model[['coefficients']][2])
-    
-    sub_coef <- data.frame(sub = sub,
-                           contrast = contr,
-                           r = r,
-                           beta = beta)
-    
-    coeff_all %<>% rbind(sub_coef)
-  }
-}
-
-
-# plot r coefficients
-mean(coeff_all$r[coeff_all$contrast == '1%'], na.rm = TRUE)
-sd(coeff_all$r[coeff_all$contrast == '1%'], na.rm = TRUE)
-
-mean(coeff_all$r[coeff_all$contrast == '1.5%'], na.rm = TRUE)
-sd(coeff_all$r[coeff_all$contrast == '1.5%'], na.rm = TRUE)
-
-coeff_all %>%
-  group_by(contrast) %>%
-  summarise(VD = mean(r, na.rm = TRUE),
-            sd = sd(r, na.rm = TRUE),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = contrast, y = VD, fill=contrast)) +
-  geom_point(data = coeff_all,
-             aes(x = contrast, y = r, color = contrast),
-             position = position_jitterdodge(0.5),
-             size = 1, alpha = 0.8,
-             show.legend = FALSE) +
-  geom_boxplot(data = coeff_all,
-               aes(x = contrast, y = r, fill = contrast),
-               outlier.shape = NA,
-               alpha = 1, width = .2,
-               position = position_dodge(0.1),
-               show.legend = FALSE) +
-  geom_point(size = 1, color = 'black', position = position_dodge(0.5)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.5), width = 0, size = 1)+
-  ggtitle("Correlation between PAS and RESS values at 2.4 Hz for each contrast") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("Correlation coefficient")
-
-
-# plot beta coefficients
-coeff_all %>%
-  group_by(contrast) %>%
-  summarise(VD = mean(beta, na.rm = TRUE),
-            sd = sd(beta, na.rm = TRUE),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = contrast, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", color='black', position=position_dodge(1)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
-  ggtitle("Correlation between PAS and RESS values at 2.4 Hz for each contrast") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("Bate value")
-
-
-## Plot RESS with confidence
-
-ress_data2 %>%
-  group_by(subject, conf_score, contrast) %>%
-  summarise(RESS_2_4 = mean(as.numeric(RESS_2_4))) %>% 
-  group_by(contrast, conf_score) %>%
-  summarise(VD = mean(RESS_2_4),
-            sd = sd(RESS_2_4),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = conf_score, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", color='black', position=position_dodge(1)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
-  ggtitle("RESS for 2.4 Hz according to contrast and confidence") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("mean RESS for 2.4 Hz")
-
-coeff_conf_all <- data.frame()
-for (contr in unique(ress_data2$contrast)){
-  
-  for (sub in unique(ress_data2$subject)){
-    
-    data_sub <- ress_data2 %>% 
-      filter(subject == sub & contrast == contr)
-    
-    cor <- cor.test(data_sub$RESS_2_4, data_sub$conf_score)
-    r <- cor[['estimate']]
-    
-    model <- lm(RESS_2_4 ~ conf_score, data=data_sub)
-    beta <- data.frame(beta = model[['coefficients']][2])
-    
-    sub_coef <- data.frame(sub = sub,
-                           contrast = contr,
-                           r = r,
-                           beta = beta)
-    
-    coeff_conf_all %<>% rbind(sub_coef)
-  }
-}
-
-# plot r coefficients
-coeff_conf_all %>%
-  group_by(contrast) %>%
-  summarise(VD = mean(r, na.rm = TRUE),
-            sd = sd(r, na.rm = TRUE),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = contrast, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", color='black', position=position_dodge(1)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
-  ggtitle("Correlation between PAS and RESS values at 2.4 Hz for each contrast") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("Correlation coefficient")
-
-
-coeff_conf_all %>%
-  group_by(contrast) %>%
-  summarise(VD = mean(beta, na.rm = TRUE),
-            sd = sd(beta, na.rm = TRUE),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = contrast, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", color='black', position=position_dodge(1)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
-  ggtitle("Correlation between PAS and RESS values at 2.4 Hz for each contrast") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("Bate value")
-
-
-## Plot RESS with accuracy
-
-ress_data2 %>%
-  group_by(subject, accuracy, contrast) %>%
-  summarise(RESS_2_4 = mean(as.numeric(RESS_2_4))) %>% 
-  group_by(contrast, accuracy) %>%
-  summarise(VD = mean(RESS_2_4),
-            sd = sd(RESS_2_4),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = accuracy, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", color='black', position=position_dodge(1)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
-  ggtitle("RESS for 2.4 Hz according to contrast and accuracy") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("mean RESS for 2.4 Hz")
-
-ress_data2 %>%
-  group_by(subject, accuracy, contrast) %>%
-  summarise(RESS_1_2 = mean(as.numeric(RESS_1_2))) %>% 
-  group_by(contrast, accuracy) %>%
-  summarise(VD = mean(RESS_1_2),
-            sd = sd(RESS_1_2),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = accuracy, y = VD, fill=contrast)) +
-  geom_bar(stat="identity", color='black', position=position_dodge(1)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(1), width = 0, size = 1)+
-  ggtitle("RESS for 1.2 Hz according to contrast and accuracy") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Contrast") +
-  ylab("mean RESS for 1.2 Hz")
+metad %<>%
+  mutate(aware = case_when(
+    Mratio < 0 ~ 0,
+    Mratio > 0 ~ 1
+  ))
 
 
 ## EEG SNR per ROI and PAS --------------------------------------------------
 
 # get data
 files <-
-  list.files("./EEG_analyses/", recursive = FALSE) %>% 
+  list.files("./EEG_analyses/Results", recursive = FALSE) %>% 
   as_data_frame()
 
 files <- files %>% 
@@ -628,163 +418,137 @@ files <- files %>%
 roi_snr_data <- data.frame()
 
 for (i in files$value){
-  pp_data <- read_csv(file.path("./EEG_analyses/", i)) %>% 
+  pp_data <- read_csv(file.path("./EEG_analyses/Results", i)) %>% 
     mutate(roi = i %>% 
-             str_extract(regex("\\d+")))
+             str_extract(regex("(?<=roi_)[a-zA-Z0-9]{3}")))
   roi_snr_data %<>% rbind(pp_data) 
 }
 
 roi_snr_data %<>%
   mutate(Contrast = case_when(
     Contrast == '1%' ~ '1%',
-    Contrast == '1.5%' | Contrast == '1.50%' ~ '1.5%'))
+    Contrast == '1.5%' | Contrast == '1.50%' ~ '1.5%'),
+    roi = case_when(
+      roi == 'OCC' ~ "Occipital",
+      roi == 'OT1' ~ "Left OT",
+      roi == 'OT2' ~ "Right OT"))
 
 n <- length(unique(roi_snr_data$Subject))
 
 # plot data at 1.2 Hz
-png(file="./EEG_analyses/Results/snr_1_2_pas.png", width=6, height=6, units="in", res=300)
-
+png(file="./EEG_analyses/Results/pas/snr_1_2_pas_left.png", width=6, height=4, units="in", res=300)
 roi_snr_data %>%
-  group_by(roi, PAS, Contrast) %>%
-  summarise(VD = mean(`1_2Hz`),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = PAS, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at 1.2 Hz according to contrast, PAS, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
+  filter(roi == "Left OT") %>% 
+  ggplot(aes(x = PAS, y = `1_2Hz`, color=Contrast)) + 
+  geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE, size = 1.5) + 
+  ggtitle("Left OT") +
+  scale_color_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
+  plot_theme + 
+  ylim(0, 8) + 
   xlab("PAS ratings") +
   ylab("SNR at 1.2 Hz")
-
 dev.off()
 
-
-# plot data at 2.4 Hz
-png(file="./EEG_analyses/Results/snr_2_4_pas.png", width=6, height=6, units="in", res=300)
-
+png(file="./EEG_analyses/Results/pas/snr_1_2_pas_right.png", width=6, height=4, units="in", res=300)
 roi_snr_data %>%
-  group_by(roi, PAS, Contrast) %>%
-  summarise(VD = mean(`2_4Hz`),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = PAS, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at 2.4 Hz according to contrast, PAS, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
+  filter(roi == "Right OT") %>% 
+  ggplot(aes(x = PAS, y = `1_2Hz`, color=Contrast)) + 
+  geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE, size = 1.5) + 
+  ggtitle("Right OT") +
+  scale_color_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
+  plot_theme + 
+  ylim(0, 8) + 
   xlab("PAS ratings") +
-  ylab("SNR at 2.4 Hz")
-
+  ylab("SNR at 1.2 Hz")
 dev.off()
 
-# plot for mean SNR
-png(file="./EEG_analyses/Results/snr_mean_pas.png", width=6, height=6, units="in", res=300)
-
+# plot data at 6 Hz
+png(file="./EEG_analyses/Results/pas/snr_6_pas.png", width=6, height=4, units="in", res=300)
 roi_snr_data %>%
-  mutate(mean = (`2_4Hz` + `1_2Hz`)/2) %>% 
-  group_by(roi, PAS, Contrast) %>%
-  summarise(VD = mean(mean),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = PAS, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at mean harmonics according to contrast, PAS, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
+  filter(roi == "Occipital") %>% 
+  ggplot(aes(x = PAS, y = `6Hz`, color=Contrast)) + 
+  geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE, size = 1.5) + 
+  ggtitle("Occipital") +
+  scale_color_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
+  plot_theme + 
+  ylim(0, 80) + 
   xlab("PAS ratings") +
-  ylab("SNR at mean harmonics")
-
+  ylab("SNR at 6 Hz")
 dev.off()
 
-# compute linear regression for each participants between SNR at 1.2Hz and PAS
 
-coeff_1_2 <- data.frame()
-for (contr in unique(roi_snr_data$Contrast)){
-  
-  for (sub in unique(roi_snr_data$Subject)){
-    
-    data_sub <- roi_snr_data %>% 
-      filter(Subject == sub & Contrast == contr)
-    
-    cor <- cor.test(data_sub$`1_2Hz`, data_sub$PAS)
-    r <- cor[['estimate']]
-    
-    model <- lm(`1_2Hz` ~ PAS, data=data_sub)
-    beta <- data.frame(beta = model[['coefficients']][2])
-    
-    sub_coef <- data.frame(sub = sub,
-                           contrast = contr,
-                           r = r,
-                           beta = beta)
-    
-    coeff_1_2 %<>% rbind(sub_coef)
-  }
-}
+## Mixed-models for face signal
 
+roi_snr_data_model <- roi_snr_data %>%
+  filter(roi != "Occipital") %>% 
+  mutate(contrastC = ifelse(Contrast == '1%', -0.5, 0.5),
+         roiC = ifelse(roi == 'Left OT', -0.5, 0.5),
+         C_1 = ifelse(Contrast == '1%', 0, 1),
+         C_1_5 = ifelse(Contrast == '1.5%', 0, 1))
 
-# descriptive for r coefficient
-mean(coeff_1_2$r[coeff_1_2$contrast == '1%'], na.rm = TRUE)
-sd(coeff_1_2$r[coeff_1_2$contrast == '1%'], na.rm = TRUE)
+# models for 1.2 Hz 
+m_face <- lmer(`1_2Hz` ~ contrastC * PAS * roiC + (contrastC * PAS|Subject), data = roi_snr_data_model)
+# use PCA to choose random effects 
+summary(rePCA(m_face))
 
-mean(coeff_1_2$r[coeff_1_2$contrast == '1.5%'], na.rm = TRUE)
-sd(coeff_1_2$r[coeff_1_2$contrast == '1.5%'], na.rm = TRUE)
+m_face <- lmer(`1_2Hz` ~ contrastC * PAS * roiC + (1|Subject), data = roi_snr_data_model)
+m_face_1 <- lmer(`1_2Hz` ~ C_1 * PAS * roiC + (1|Subject), data = roi_snr_data_model)
+m_face_1_5 <- lmer(`1_2Hz` ~ C_1_5 * PAS * roiC + (1|Subject), data = roi_snr_data_model)
 
-# t-tests for correlations
-coeff_1_2_r <- coeff_1_2 %>% 
-  select(-beta) %>% 
-  dcast(sub ~ contrast, value = 'r')
+qqnorm(residuals(m_face))
+qqline(residuals(m_face))
+qqmath(ranef(m_face))
 
-r_model_C1 <- lm(`1%` ~ 1, data=coeff_1_2_r)
-r_model_C2 <- lm(`1.5%` ~ 1, data=coeff_1_2_r)
-summary(r_model_C1)
-summary(r_model_C2)
+data.frame(x = residuals(m_face)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram()
+
+summary(m_face)
+summary(m_face_1)
+summary(m_face_1_5)
 
 
-# descriptive for beta
-mean(coeff_1_2$beta[coeff_1_2$contrast == '1%'], na.rm = TRUE)
-sd(coeff_1_2$beta[coeff_1_2$contrast == '1%'], na.rm = TRUE)
+## Mixed-models for image signal
 
-mean(coeff_1_2$beta[coeff_1_2$contrast == '1.5%'], na.rm = TRUE)
-sd(coeff_1_2$beta[coeff_1_2$contrast == '1.5%'], na.rm = TRUE)
+roi_snr_data_model <- roi_snr_data %>%
+  filter(roi == "Occipital") %>% 
+  mutate(contrastC = ifelse(Contrast == '1%', -0.5, 0.5),
+         Contrast_1 = ifelse(Contrast == '1%', 0, 1),
+         Contrast_1_5 = ifelse(Contrast == '1.5%', 0, 1))
 
-# t-tests for beta coeff
-coeff_1_2_beta <- coeff_1_2 %>% 
-  select(-r) %>% 
-  dcast(sub ~ contrast, value = 'beta')
+# models for 6 Hz
+m_image <- lmer(`6Hz` ~ contrastC * PAS + (contrastC * PAS|Subject), data = roi_snr_data_model)
+# use PCA to choose random effects 
+summary(rePCA(m_image))
 
-beta_model_C1 <- lm(`1%` ~ 1, data=coeff_1_2_beta)
-beta_model_C2 <- lm(`1.5%` ~ 1, data=coeff_1_2_beta)
-summary(beta_model_C1)
-summary(beta_model_C2)
+m_image <- lmer(`6Hz` ~ contrastC * PAS + (1|Subject), data = roi_snr_data_model)
+m_image_1 <- lmer(`6Hz` ~ Contrast_1 * PAS + (1|Subject), data = roi_snr_data_model)
+m_image_1_5 <- lmer(`6Hz` ~ Contrast_1_5 * PAS + (1|Subject), data = roi_snr_data_model)
 
-# correlation between beta value and task performance
-beta_perf <- first_order %>% 
-  dcast(Pp ~contrast, value.var = 'performance') %>% 
-  mutate(sub = Pp) %>% 
-  select(-Pp)
-beta_perf <- merge(beta_perf, coeff_1_2_beta, by = 'sub')
-  
-cor.test(beta_perf$`1.5%.x`, beta_perf$`1.5%.y`)
+qqnorm(residuals(m_image))
+qqline(residuals(m_image))
+qqmath(ranef(m_image))
+
+data.frame(x = residuals(m_image)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram()
+
+summary(m_image)
+summary(m_image_1)
+summary(m_image_1_5)
 
 
 ## EEG SNR per ROI and accuracy --------------------------------------------------
 
 # get data
 files <-
-  list.files("./EEG_analyses/", recursive = FALSE) %>% 
+  list.files("./EEG_analyses/Results", recursive = FALSE) %>% 
   as_data_frame()
 
 files <- files %>% 
@@ -795,21 +559,25 @@ files <- files %>%
 roi_snr_data <- data.frame()
 
 for (i in files$value){
-  pp_data <- read_csv(file.path("./EEG_analyses/", i)) %>% 
+  pp_data <- read_csv(file.path("./EEG_analyses/Results", i)) %>% 
     mutate(roi = i %>% 
-             str_extract(regex("\\d+")))
+             str_extract(regex("(?<=roi_)[a-zA-Z0-9]{3}")))
   roi_snr_data %<>% rbind(pp_data) 
 }
 
 roi_snr_data %<>%
   mutate(Contrast = case_when(
     Contrast == '1%' ~ '1%',
-    Contrast == '1.5%' | Contrast == '1.50%' ~ '1.5%'))
+    Contrast == '1.5%' | Contrast == '1.50%' ~ '1.5%'),
+    roi = case_when(
+      roi == 'OCC' ~ "Occipital",
+      roi == 'OT1' ~ "Left OT",
+      roi == 'OT2' ~ "Right OT")) 
 
 # plot data at 1.2 Hz
-png(file="./EEG_analyses/Results/snr_1_2_acc.png", width=6, height=6, units="in", res=300)
-
+png(file="./EEG_analyses/Results/accuracy/snr_1_2_acc.png", width=6, height=6, units="in", res=300)
 roi_snr_data %>%
+  filter(roi != "Occipital" ) %>% 
   group_by(roi, Accuracy, Contrast) %>%
   summarise(VD = mean(`1_2Hz`),
             sd = sd(`1_2Hz`),
@@ -820,65 +588,103 @@ roi_snr_data %>%
   geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
   facet_wrap(~ roi) +
   ggtitle("SNR at 1.2 Hz according to contrast, accuracy, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
+  scale_fill_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
   plot_theme +
   xlab("Accuracy") +
   ylab("SNR at 1.2 Hz")
-
 dev.off()
 
-
-# plot data at 2.4 Hz
-png(file="./EEG_analyses/Results/snr_2_4_acc.png", width=6, height=6, units="in", res=300)
-
+# plot for 6 Hz 
+png(file="./EEG_analyses/Results/accuracy/snr_6_acc.png", width=6, height=6, units="in", res=300)
 roi_snr_data %>%
+  filter(roi == "Occipital" ) %>% 
   group_by(roi, Accuracy, Contrast) %>%
-  summarise(VD = mean(`2_4Hz`),
-            sd = sd(`1_2Hz`),
+  summarise(VD = mean(`6Hz`),
+            sd = sd(`6Hz`),
             se = sd/sqrt(n),
             CI = se * qt(.975, n() - 1)) %>%
   ggplot(aes(x = Accuracy, y = VD, fill=Contrast)) +
   geom_bar(stat="identity", position=position_dodge(0.93)) +
   geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at 2.4 Hz according to contrast, accuracy, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
+  ggtitle("SNR at 6 Hz according to contrast and accuracy in the occipital ROI") +
+  scale_fill_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
   plot_theme +
   xlab("Accuracy") +
-  ylab("SNR at 2.4 Hz")
-
+  ylab("SNR at 6 Hz")
 dev.off()
 
-# plot for mean SNR
-png(file="./EEG_analyses/Results/snr_mean_acc.png", width=6, height=6, units="in", res=300)
 
-roi_snr_data %>%
-  mutate(mean = (`2_4Hz` + `1_2Hz`)/2) %>% 
-  group_by(roi, Accuracy, Contrast) %>%
-  summarise(VD = mean(mean),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = Accuracy, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at mean harmonics according to contrast, accuracy, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Accuracy") +
-  ylab("SNR at mean harmonics")
+## Mixed-models for face signal
 
-dev.off()
+# exclude outliers (sub-39) and create contrasts
+roi_snr_data_model <- roi_snr_data %>%
+  filter(roi != "Occipital") %>% 
+  mutate(accC = ifelse(Accuracy == 'Incorrect', -0.5, 0.5),
+         contrastC = ifelse(Contrast == '1%', -0.5, 0.5),
+         roiC = ifelse(roi == 'Left OT', -0.5, 0.5),
+         C_1 = ifelse(Contrast == '1%', 0, 1),
+         C_1_5 = ifelse(Contrast == '1.5%', 0, 1))
+
+# models for 1.2 Hz 
+m_face <- lmer(`1_2Hz` ~ contrastC * accC * roiC + (contrastC * accC|Subject), data = roi_snr_data_model)
+# use PCA to choose random effects 
+summary(rePCA(m_face))
+
+m_face <- lmer(`1_2Hz` ~ contrastC * accC * roiC + (1|Subject), data = roi_snr_data_model)
+m_face_1 <- lmer(`1_2Hz` ~ C_1 * accC * roiC + (1|Subject), data = roi_snr_data_model)
+m_face_1_5 <- lmer(`1_2Hz` ~ C_1_5 * accC * roiC + (1|Subject), data = roi_snr_data_model)
+
+qqnorm(residuals(m_face))
+qqline(residuals(m_face))
+qqmath(ranef(m_face))
+
+data.frame(x = residuals(m_face)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram()
+
+summary(m_face)
+summary(m_face_1)
+summary(m_face_1_5)
+
+
+## Mixed-models for image signal
+
+roi_snr_data_model <- roi_snr_data %>%
+  filter(roi == "Occipital") %>% 
+  mutate(accC = ifelse(Accuracy == 'Incorrect', -0.5, 0.5),
+         contrastC = ifelse(Contrast == '1%', -0.5, 0.5),
+         C_1 = ifelse(Contrast == '1%', 0, 1),
+         C_1_5 = ifelse(Contrast == '1.5%', 0, 1))
+         
+# models for 6 Hz 
+m_image <- lmer(`6Hz` ~ contrastC * accC +(contrastC|Subject), data = roi_snr_data_model)
+# use PCA to choose random effects 
+summary(rePCA(m_image))
+
+m_image <- lmer(`6Hz` ~ contrastC * accC +(1|Subject), data = roi_snr_data_model)
+m_image_1 <- lmer(`6Hz` ~ C_1 * accC + (1|Subject), data = roi_snr_data_model)
+m_image_1_5 <- lmer(`6Hz` ~ C_1_5 * accC + (1|Subject), data = roi_snr_data_model)
+
+qqnorm(residuals(m_image))
+qqline(residuals(m_image))
+qqmath(ranef(m_image))
+
+data.frame(x = residuals(m_image)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram()
+
+summary(m_image)
+summary(m_image_1)
+summary(m_image_1_5)
+
 
 ## EEG SNR per ROI and confidence ------------------------------------------
 
 # get data
 files <-
-  list.files("./EEG_analyses/", recursive = FALSE) %>% 
+  list.files("./EEG_analyses/Results", recursive = FALSE) %>% 
   as_data_frame()
 
 files <- files %>% 
@@ -889,84 +695,126 @@ files <- files %>%
 roi_snr_data <- data.frame()
 
 for (i in files$value){
-  pp_data <- read_csv(file.path("./EEG_analyses/", i)) %>% 
+  pp_data <- read_csv(file.path("./EEG_analyses//Results", i)) %>% 
     mutate(roi = i %>% 
-             str_extract(regex("\\d+")))
+             str_extract(regex("(?<=roi_)[a-zA-Z0-9]{3}")))
   roi_snr_data %<>% rbind(pp_data) 
 }
 
 roi_snr_data %<>%
   mutate(Contrast = case_when(
     Contrast == '1%' ~ '1%',
-    Contrast == '1.5%' | Contrast == '1.50%' ~ '1.5%'))
+    Contrast == '1.5%' | Contrast == '1.50%' ~ '1.5%'),
+    roi = case_when(
+      roi == 'OCC' ~ "Occipital",
+      roi == 'OT1' ~ "Left OT",
+      roi == 'OT2' ~ "Right OT"))
 
 # plot data at 1.2 Hz
-png(file="./EEG_analyses/Results/snr_1_2_conf.png", width=6, height=6, units="in", res=300)
-
+png(file="./EEG_analyses/Results/confidence/snr_1_2_pas_left.png", width=6, height=4, units="in", res=300)
 roi_snr_data %>%
-  group_by(roi, Confidence, Contrast) %>%
-  summarise(VD = mean(`1_2Hz`),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = Confidence, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at 1.2 Hz according to contrast, confidence, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Confidence") +
+  filter(roi == "Left OT") %>% 
+  ggplot(aes(x = Confidence, y = `1_2Hz`, color=Contrast)) + 
+  geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE, size = 1.5) + 
+  ggtitle("Left OT") +
+  scale_color_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
+  plot_theme + 
+  ylim(0, 10) + 
+  xlab("PAS ratings") +
   ylab("SNR at 1.2 Hz")
-
 dev.off()
 
-
-# plot data at 2.4 Hz
-png(file="./EEG_analyses/Results/snr_2_4_conf.png", width=6, height=6, units="in", res=300)
-
+png(file="./EEG_analyses/Results/confidence/snr_1_2_pas_right.png", width=6, height=4, units="in", res=300)
 roi_snr_data %>%
-  group_by(roi, Confidence, Contrast) %>%
-  summarise(VD = mean(`2_4Hz`),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = Confidence, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at 2.4 Hz according to contrast, confidence, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Confidence") +
-  ylab("SNR at 2.4 Hz")
-
+  filter(roi == "Right OT") %>% 
+  ggplot(aes(x = Confidence, y = `1_2Hz`, color=Contrast)) + 
+  geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE, size = 1.5) + 
+  ggtitle("Right OT") +
+  scale_color_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
+  plot_theme + 
+  ylim(0, 10) + 
+  xlab("PAS ratings") +
+  ylab("SNR at 1.2 Hz")
 dev.off()
 
-# plot for mean SNR
-png(file="./EEG_analyses/Results/snr_mean_conf.png", width=6, height=6, units="in", res=300)
-
+# plot data at 6 Hz
+png(file="./EEG_analyses/Results/confidence/snr_6_pas.png", width=6, height=4, units="in", res=300)
 roi_snr_data %>%
-  mutate(mean = (`2_4Hz` + `1_2Hz`)/2) %>% 
-  group_by(roi, Confidence, Contrast) %>%
-  summarise(VD = mean(mean),
-            sd = sd(`1_2Hz`),
-            se = sd/sqrt(n),
-            CI = se * qt(.975, n() - 1)) %>%
-  ggplot(aes(x = Confidence, y = VD, fill=Contrast)) +
-  geom_bar(stat="identity", position=position_dodge(0.93)) +
-  geom_errorbar(aes(ymin = VD - CI, ymax = VD + CI), position=position_dodge(0.93), width = 0, size = 0.7)+
-  facet_wrap(~ roi) +
-  ggtitle("SNR at mean harmonics according to contrast, confidence, and ROI") +
-  scale_fill_brewer(palette="Dark2") +
-  theme_bw() +
-  plot_theme +
-  xlab("Confidence") +
-  ylab("SNR at mean harmonics")
-
+  filter(roi == "Occipital") %>% 
+  ggplot(aes(x = Confidence, y = `6Hz`, color=Contrast)) + 
+  geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
+  geom_smooth(method=lm, se=FALSE, fullrange=TRUE, size = 1.5) + 
+  ggtitle("Occipital") +
+  scale_color_manual(values = c("#0F056B", "#9683EC")) +
+  theme_classic() +
+  plot_theme + 
+  # ylim(0, 80) + 
+  xlab("PAS ratings") +
+  ylab("SNR at 6 Hz")
 dev.off()
 
 
+## Mixed-models for face signal
+
+roi_snr_data_model <- roi_snr_data %>%
+  filter(roi != "Occipital") %>% 
+  mutate(contrastC = ifelse(Contrast == '1%', -0.5, 0.5),
+         roiC = ifelse(roi == 'Left OT', -0.5, 0.5),
+         C_1 = ifelse(Contrast == '1%', 0, 1),
+         C_1_5 = ifelse(Contrast == '1.5%', 0, 1))
+
+# models for 1.2 Hz 
+m_face <- lmer(`1_2Hz` ~ contrastC * Confidence * roiC + (contrastC * Confidence|Subject), data = roi_snr_data_model)
+# use PCA to choose random effects 
+summary(rePCA(m_face))
+
+m_face <- lmer(`1_2Hz` ~ contrastC * Confidence * roiC + (1|Subject), data = roi_snr_data_model)
+m_face_1 <- lmer(`1_2Hz` ~ C_1 * Confidence * roiC + (1|Subject), data = roi_snr_data_model)
+m_face_1_5 <- lmer(`1_2Hz` ~ C_1_5 * Confidence * roiC + (1|Subject), data = roi_snr_data_model)
+
+qqnorm(residuals(m_face))
+qqline(residuals(m_face))
+qqmath(ranef(m_face))
+
+data.frame(x = residuals(m_face)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram()
+
+summary(m_face)
+summary(m_face_1)
+summary(m_face_1_5)
+
+
+## Mixed-models for image signal
+
+roi_snr_data_model <- roi_snr_data %>%
+  filter(roi == "Occipital") %>% 
+  mutate(contrastC = ifelse(Contrast == '1%', -0.5, 0.5),
+         Contrast_1 = ifelse(Contrast == '1%', 0, 1),
+         Contrast_1_5 = ifelse(Contrast == '1.5%', 0, 1))
+
+# models for 6 Hz
+m_image <- lmer(`6Hz` ~ contrastC * Confidence + (contrastC * Confidence|Subject), data = roi_snr_data_model)
+# use PCA to choose random effects 
+summary(rePCA(m_image))
+
+m_image <- lmer(`6Hz` ~ contrastC * Confidence + (1|Subject), data = roi_snr_data_model)
+m_image_1 <- lmer(`6Hz` ~ Contrast_1 * Confidence + (1|Subject), data = roi_snr_data_model)
+m_image_1_5 <- lmer(`6Hz` ~ Contrast_1_5 * Confidence + (1|Subject), data = roi_snr_data_model)
+
+qqnorm(residuals(m_image))
+qqline(residuals(m_image))
+qqmath(ranef(m_image))
+
+data.frame(x = residuals(m_image)) %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram()
+
+summary(m_image)
+summary(m_image_1)
+summary(m_image_1_5)
 
