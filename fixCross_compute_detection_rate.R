@@ -110,4 +110,5 @@ for (i in files$value){
 
 # save
 write.csv(fixCross, "./result_fixCross.csv")
+write.csv(fixCross_seq, "./result_fixCross_seq.csv")
 
