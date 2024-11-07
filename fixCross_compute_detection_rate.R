@@ -41,7 +41,6 @@ files <- data.frame(files) %>%
   mutate(tokeep = ifelse(str_detect(value, regex("noreport")), 0, 1)) %>% 
   filter(tokeep == 1)
 
-fixCross_seq <- data.frame()
 fixCross <- data.frame()
 for (i in files$value){
   
@@ -85,30 +84,11 @@ for (i in files$value){
     dcast(sub + contrast + contrast_type + cross_num ~ fixcross_resp, value.var = "count", sum)  
   
   # add this subject to dataframe
-  fixCross_seq %<>%
+  fixCross %<>%
     rbind(detect)
-  
-  # calculate ratio for each contrast (when column 32 is 0 then there is no detection for this cross)
-  detect_1 <- detect %>% 
-    filter(contrast == '1%')
-  ratio_1 = 1 - table(c(detect_1$`32`))["0"]/nrow(detect_1) # 32 corresponds to the ASCII code for space bar 
-  
-  detect_1.5 <- detect %>% 
-    filter(contrast == '1.5%')
-  ratio_1.5 = 1 - table(c(detect_1.5$`32`))["0"]/nrow(detect_1.5) 
-  
-  data <- data.frame(sub = detect$sub[1] %>% 
-                       str_extract(regex("\\d+")), 
-                     ratio_1 = ratio_1,
-                     ratio_1.5 = ratio_1.5)
-  
-  # add this subject to dataframe
-  fixCross %<>% 
-    rbind(data)
   
 }
 
 # save
-write.csv(fixCross, "./result_fixCross.csv")
-write.csv(fixCross_seq, "./result_fixCross_seq.csv")
+write.csv(fixCross, "./Behaviour/Results/result_fixCross.csv")
 
