@@ -147,7 +147,7 @@ fig <- resp_data2 %>%
   plot_theme +
   xlab("Contrast") +
   ylab("mean PAS")
-ggsave(file="./EEG_analyses/Results/confidence/pas_acc_contrast.svg", plot=fig, width=6, height=4)
+ggsave(file="./Behaviour/Results/pas_acc_contrast.svg", plot=fig, width=6, height=4)
 
 
 # analyses
@@ -208,7 +208,7 @@ fig <- resp_data2 %>%
   plot_theme +
   xlab("Contrast") +
   ylab("mean confidence")
-ggsave(file="./EEG_analyses/Results/confidence/conf_acc_contrast.svg", plot=fig, width=6, height=4)
+ggsave(file="./Behaviour/Results/conf_acc_contrast.svg", plot=fig, width=6, height=4)
 
 # analyses
 mean(resp_data2$conf_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
