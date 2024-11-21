@@ -66,11 +66,6 @@ resp_data2 <- resp_data2 %>%
 # save clean dataset
 write.csv(resp_data2, "./Behaviour/Results/behaviour_clean_data.csv")
 
-# get number of trial per subject and PAS response
-trials <- resp_data2 %>% 
-  mutate(count = 1) %>% 
-  dcast(Pp + contrast ~ pas_score, value.var = 'count', sum)
-
 
 ## First-order performance ------------------------------------------------------
 
@@ -81,9 +76,6 @@ first_order <- resp_data2 %>%
   mutate(performance = Correct/(Correct+Incorrect))
 
 n <- length(unique(first_order$Pp))
-
-
-png(file="./Behaviour/Results/first_order.png", width=6, height=6, units="in", res=300)
 
 first_order %>% 
   group_by(contrast) %>%
@@ -100,8 +92,6 @@ first_order %>%
   plot_theme +
   xlab("Contrast") +
   ylab("Performance")
-
-dev.off()
 
 # analyses
 mean(first_order$performance[first_order$contrast == '1%'])
@@ -140,10 +130,7 @@ count_pas <- resp_data2 %>%
 
 
 # plot mean PAS per accuracy and contrast
-
-png(file="./Behaviour/Results/pas_acc_contrast.png", width=6, height=6, units="in", res=300)
-
-resp_data2 %>%
+fig <- resp_data2 %>%
   group_by(Pp, accuracy, contrast) %>%
   summarise(pas_score = mean(as.numeric(pas_score))) %>% 
   group_by(contrast, accuracy) %>%
@@ -160,8 +147,8 @@ resp_data2 %>%
   plot_theme +
   xlab("Contrast") +
   ylab("mean PAS")
+ggsave(file="./EEG_analyses/Results/confidence/pas_acc_contrast.svg", plot=fig, width=6, height=4)
 
-dev.off()
 
 # analyses
 mean(resp_data2$pas_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
@@ -206,9 +193,7 @@ summary(mod_1_5)
 ## Confidence -----------------------------------------------------------
 
 # raw confidence per accuracy
-png(file="./Behaviour/Results/conf_acc_contrast.png", width=6, height=6, units="in", res=300)
-
-resp_data2 %>%
+fig <- resp_data2 %>%
   group_by(contrast, accuracy) %>%
   summarise(VD = mean(conf_score),
             sd = sd(conf_score),
@@ -223,8 +208,7 @@ resp_data2 %>%
   plot_theme +
   xlab("Contrast") +
   ylab("mean confidence")
-
-dev.off()
+ggsave(file="./EEG_analyses/Results/confidence/conf_acc_contrast.svg", plot=fig, width=6, height=4)
 
 # analyses
 mean(resp_data2$conf_score[resp_data2$contrast == '1%' & resp_data2$accuracy == 'Correct'])
@@ -436,8 +420,7 @@ roi_snr_data %<>%
 n <- length(unique(roi_snr_data$Subject))
 
 # plot data at 1.2 Hz
-png(file="./EEG_analyses/Results/pas/snr_1_2_pas_left.png", width=6, height=4, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Left OT") %>% 
   ggplot(aes(x = PAS, y = `1_2Hz`, color=Contrast)) + 
   geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
@@ -449,10 +432,9 @@ roi_snr_data %>%
   ylim(0, 8) + 
   xlab("PAS ratings") +
   ylab("SNR at 1.2 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/pas/snr_1_2_pas_left.svg", plot=fig, width=6, height=4)
 
-png(file="./EEG_analyses/Results/pas/snr_1_2_pas_right.png", width=6, height=4, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Right OT") %>% 
   ggplot(aes(x = PAS, y = `1_2Hz`, color=Contrast)) + 
   geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
@@ -464,11 +446,10 @@ roi_snr_data %>%
   ylim(0, 8) + 
   xlab("PAS ratings") +
   ylab("SNR at 1.2 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/pas/snr_1_2_pas_right.svg", plot=fig, width=6, height=4)
 
 # plot data at 6 Hz
-png(file="./EEG_analyses/Results/pas/snr_6_pas.png", width=6, height=4, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Occipital") %>% 
   ggplot(aes(x = PAS, y = `6Hz`, color=Contrast)) + 
   geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
@@ -480,8 +461,10 @@ roi_snr_data %>%
   ylim(0, 80) + 
   xlab("PAS ratings") +
   ylab("SNR at 6 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/pas/snr_6_pas.svg", plot=fig, width=6, height=4)
 
+
+write.csv2(roi_snr_data, "./EEG_analyses/Results/signal_pas_all_sub.csv")
 
 ## Mixed-models for face signal
 
@@ -544,6 +527,96 @@ summary(m_image_1)
 summary(m_image_1_5)
 
 
+## Correlations with number of trials for face signal
+
+# get number of trial per subject and PAS response
+trials <- resp_data2 %>% 
+  mutate(count = 1) %>% 
+  dcast(Pp + contrast ~ pas_score, value.var = 'count', sum)
+
+trials_corr <- roi_snr_data %>% 
+  filter(roi != "Occipital") %>%
+  dcast(Subject + Contrast ~ PAS, value.var = '1_2Hz', mean) %>% 
+  mutate(Pp = Subject %>% 
+           str_extract(regex("\\d+")),
+         Pp = as.numeric(Pp),
+         contrast = Contrast)
+
+trials_corr <- merge(trials, trials_corr, by = c("Pp", "contrast"))
+
+# correlations per PAS score for each contrast
+# 1% contrast 
+cor.test(trials_corr$`1.x`[trials_corr$contrast == '1%'], trials_corr$`1.y`[trials_corr$contrast == '1%'], na.rm=TRUE)
+cor.test(trials_corr$`2.x`[trials_corr$contrast == '1%'], trials_corr$`2.y`[trials_corr$contrast == '1%'], na.rm=TRUE)
+cor.test(trials_corr$`3.x`[trials_corr$contrast == '1%'], trials_corr$`3.y`[trials_corr$contrast == '1%'], na.rm=TRUE)
+
+# 1.5% contrast
+cor.test(trials_corr$`1.x`[trials_corr$contrast == '1.5%'], trials_corr$`1.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+cor.test(trials_corr$`2.x`[trials_corr$contrast == '1.5%'], trials_corr$`2.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+cor.test(trials_corr$`3.x`[trials_corr$contrast == '1.5%'], trials_corr$`3.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+cor.test(trials_corr$`4.x`[trials_corr$contrast == '1.5%'], trials_corr$`4.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+
+# all ratings together
+trials2 <- trials %>% 
+  melt(id.vars = c("Pp", "contrast"), variable.name = "pas", value.name = "trials")
+
+trials_corr2 <- roi_snr_data %>% 
+  filter(roi != "Occipital") %>% 
+  mutate(Pp = Subject %>% 
+           str_extract(regex("\\d+")),
+         Pp = as.numeric(Pp),
+         contrast = Contrast,
+         pas = PAS)
+
+trials_corr2 <- merge(trials2, trials_corr2, by = c("Pp", "contrast", "pas"))
+
+cor.test(trials_corr2$`1_2Hz`[trials_corr$contrast == '1%'], trials_corr2$trials[trials_corr$contrast == '1%'], na.rm=TRUE)
+cor.test(trials_corr2$`1_2Hz`[trials_corr$contrast == '1.5%'], trials_corr2$trials[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+
+
+## Correlations with number of trials for image signal
+
+trials_corr <- roi_snr_data %>% 
+  filter(roi == "Occipital") %>%
+  dcast(Subject + Contrast ~ PAS, value.var = '6Hz', mean) %>% 
+  mutate(Pp = Subject %>% 
+           str_extract(regex("\\d+")),
+         Pp = as.numeric(Pp),
+         contrast = Contrast)
+
+trials_corr <- merge(trials, trials_corr, by = c("Pp", "contrast"))
+
+# correlations per PAS score for each contrast
+# 1% contrast 
+cor.test(trials_corr$`1.x`[trials_corr$contrast == '1%'], trials_corr$`1.y`[trials_corr$contrast == '1%'], na.rm=TRUE)
+cor.test(trials_corr$`2.x`[trials_corr$contrast == '1%'], trials_corr$`2.y`[trials_corr$contrast == '1%'], na.rm=TRUE)
+cor.test(trials_corr$`3.x`[trials_corr$contrast == '1%'], trials_corr$`3.y`[trials_corr$contrast == '1%'], na.rm=TRUE)
+
+# 1.5% contrast
+cor.test(trials_corr$`1.x`[trials_corr$contrast == '1.5%'], trials_corr$`1.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+cor.test(trials_corr$`2.x`[trials_corr$contrast == '1.5%'], trials_corr$`2.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+cor.test(trials_corr$`3.x`[trials_corr$contrast == '1.5%'], trials_corr$`3.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+cor.test(trials_corr$`4.x`[trials_corr$contrast == '1.5%'], trials_corr$`4.y`[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+
+# all ratings together
+trials2 <- trials %>% 
+  melt(id.vars = c("Pp", "contrast"), variable.name = "pas", value.name = "trials")
+
+trials_corr2 <- roi_snr_data %>% 
+  filter(roi == "Occipital") %>% 
+  mutate(Pp = Subject %>% 
+           str_extract(regex("\\d+")),
+         Pp = as.numeric(Pp),
+         contrast = Contrast,
+         pas = PAS)
+
+trials_corr2 <- merge(trials2, trials_corr2, by = c("Pp", "contrast", "pas"))
+
+cor.test(trials_corr2$`6Hz`[trials_corr$contrast == '1%'], trials_corr2$trials[trials_corr$contrast == '1%'], na.rm=TRUE)
+cor.test(trials_corr2$`6Hz`[trials_corr$contrast == '1.5%'], trials_corr2$trials[trials_corr$contrast == '1.5%'], na.rm=TRUE)
+
+
+
 ## EEG SNR per ROI and accuracy --------------------------------------------------
 
 # get data
@@ -575,8 +648,7 @@ roi_snr_data %<>%
       roi == 'OT2' ~ "Right OT")) 
 
 # plot data at 1.2 Hz
-png(file="./EEG_analyses/Results/accuracy/snr_1_2_acc.png", width=6, height=6, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi != "Occipital" ) %>% 
   group_by(roi, Accuracy, Contrast) %>%
   summarise(VD = mean(`1_2Hz`),
@@ -593,11 +665,10 @@ roi_snr_data %>%
   plot_theme +
   xlab("Accuracy") +
   ylab("SNR at 1.2 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/accuracy/snr_1_2_acc.svg", plot=fig, width=6, height=4)
 
 # plot for 6 Hz 
-png(file="./EEG_analyses/Results/accuracy/snr_6_acc.png", width=6, height=6, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Occipital" ) %>% 
   group_by(roi, Accuracy, Contrast) %>%
   summarise(VD = mean(`6Hz`),
@@ -613,12 +684,11 @@ roi_snr_data %>%
   plot_theme +
   xlab("Accuracy") +
   ylab("SNR at 6 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/accuracy/snr_6_acc.png", plot=fig, width=6, height=4)
 
 
 ## Mixed-models for face signal
 
-# exclude outliers (sub-39) and create contrasts
 roi_snr_data_model <- roi_snr_data %>%
   filter(roi != "Occipital") %>% 
   mutate(accC = ifelse(Accuracy == 'Incorrect', -0.5, 0.5),
@@ -711,8 +781,7 @@ roi_snr_data %<>%
       roi == 'OT2' ~ "Right OT"))
 
 # plot data at 1.2 Hz
-png(file="./EEG_analyses/Results/confidence/snr_1_2_pas_left.png", width=6, height=4, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Left OT") %>% 
   ggplot(aes(x = Confidence, y = `1_2Hz`, color=Contrast)) + 
   geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
@@ -722,12 +791,11 @@ roi_snr_data %>%
   theme_classic() +
   plot_theme + 
   ylim(0, 10) + 
-  xlab("PAS ratings") +
+  xlab("confidence ratings") +
   ylab("SNR at 1.2 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/confidence/snr_1_2_conf_left.svg", plot=fig, width=6, height=4)
 
-png(file="./EEG_analyses/Results/confidence/snr_1_2_pas_right.png", width=6, height=4, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Right OT") %>% 
   ggplot(aes(x = Confidence, y = `1_2Hz`, color=Contrast)) + 
   geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
@@ -737,13 +805,12 @@ roi_snr_data %>%
   theme_classic() +
   plot_theme + 
   ylim(0, 10) + 
-  xlab("PAS ratings") +
+  xlab("confidence ratings") +
   ylab("SNR at 1.2 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/confidence/snr_1_2_conf_right.svg", plot=fig, width=6, height=4)
 
 # plot data at 6 Hz
-png(file="./EEG_analyses/Results/confidence/snr_6_pas.png", width=6, height=4, units="in", res=300)
-roi_snr_data %>%
+fig <- roi_snr_data %>%
   filter(roi == "Occipital") %>% 
   ggplot(aes(x = Confidence, y = `6Hz`, color=Contrast)) + 
   geom_point(position = position_jitterdodge(0.3), size = 1, alpha = 0.7) + 
@@ -753,9 +820,11 @@ roi_snr_data %>%
   theme_classic() +
   plot_theme + 
   # ylim(0, 80) + 
-  xlab("PAS ratings") +
+  xlab("confidence ratings") +
   ylab("SNR at 6 Hz")
-dev.off()
+ggsave(file="./EEG_analyses/Results/confidence/snr_6_conf.svg", plot=fig, width=6, height=4)
+
+write.csv2(roi_snr_data, "./EEG_analyses/Results/signal_conf_all_sub.csv")
 
 
 ## Mixed-models for face signal
@@ -817,4 +886,7 @@ data.frame(x = residuals(m_image)) %>%
 summary(m_image)
 summary(m_image_1)
 summary(m_image_1_5)
+
+
+
 
