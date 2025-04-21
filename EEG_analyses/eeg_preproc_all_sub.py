@@ -19,12 +19,12 @@ from pyprep.find_noisy_channels import NoisyChannels
 
 # Import EEG data
 ROOT_DIR = "C:/Users/Admin/Desktop/RESEARCH PROJECTS ANALYSES/freq_tag_consciousness"
-EEG_DIR = 'EEG_analyses'
+EEG_DIR = 'EEG_analyses_S2'
 DATA_DIR = 'Data'
 RESULT_DIR = 'Results'
-BEHAV_DIR = 'Behaviour'
 
-SUBJECTS = [3, 14, 15, 17, 18, 19, 20, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 37, 38, 39, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 52]
+SUBJECTS = [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, \
+            23, 24, 25, 26]
 N_STIM_PER_SEQ = 240
 RESAMPLE_FREQ = 250
 
@@ -38,7 +38,7 @@ info_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 for subject in SUBJECTS : 
     
     # import EEG data
-    data_file = glob.glob(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f"*{subject}*.bdf"))[0]
+    data_file = glob.glob(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f"*{subject}*.bdf"))[0]
     raw_data = mne.io.read_raw_bdf(data_file, stim_channel="Status", preload=True)
     print(raw_data.info)
     
@@ -92,11 +92,11 @@ for subject in SUBJECTS :
     raw_data.set_eeg_reference('average') 
 
     # save the preprocessed raw data
-    raw_data.save(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f'sub-{subject}_FreqTag_preproc.fif'), overwrite=True)
+    raw_data.save(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}_FreqTag_preproc.fif'), overwrite=True)
     
     
 ## Save output
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'info_all_subjects.pickle'), 'wb') as f:
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'info_all_subjects_S2.pickle'), 'wb') as f:
     pickle.dump(info_all_sub, f)     
     
