@@ -17,7 +17,6 @@ from matplotlib import pyplot as plt
 import scipy.signal as ss
 import pickle
 from meegkit.utils import snr_spectrum
-from matplotlib.gridspec import GridSpec
 
 # define function
 def find_nearest_index(array, target_value):
@@ -673,25 +672,7 @@ for sub in snr_pas_all_sub.keys():
 snr_roi_pas['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OCC_SNR_PAS_all_sub.csv'), index=False)  
 snr_roi_pas['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT1_SNR_PAS_all_sub.csv'), index=False)  
 snr_roi_pas['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT2_SNR_PAS_all_sub.csv'), index=False)  
-    
-# plot topomaps
-
-vmin = min([min(snr_1_2_C1), min(snr_1_2_C2)])
-vmax = max([max(snr_1_2_C1), max(snr_1_2_C2)])
-
-fig,(ax1,ax2) = plt.subplots(ncols=2)
-im,cm = plot_topomap(snr_1_2_C1, epochs.info, axes=ax1, show=False, cmap='viridis', vlim=(vmin, vmax))
-im,cm = plot_topomap(snr_1_2_C2, epochs.info, axes=ax2, show=False, cmap='viridis', vlim=(vmin, vmax))
-ax1.set_title('SNR faces 1%', fontsize=12)
-ax2.set_title('SNR faces 1.5%', fontsize=12)
-ax_x_start = 0.95
-ax_x_width = 0.04
-ax_y_start = 0.1
-ax_y_height = 0.9
-cbar_ax = fig.add_axes([ax_x_start, ax_y_start, ax_x_width, ax_y_height])
-clb = fig.colorbar(im, cax=cbar_ax)
-fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "Topomaps_faces.png"), dpi=300)
-               
+       
 
 ## Get snr per accuracy at each frequency, subject, and ROI
 
