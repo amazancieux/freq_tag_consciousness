@@ -51,12 +51,12 @@ snr_pas_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 snr_acc_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 snr_conf_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
 
-seq_behav_all_sub = {f'sub-{sub}': {} for sub in SUBJECTS}
-
 
 for subject in SUBJECTS : 
     
     ## Epoch data
+    
+    print(subject)
     
     # import preprocessed data 
     data_file = glob.glob(os.path.join(ROOT_DIR, EEG_DIR, DATA_DIR, f'sub-{subject}', f"*{subject}*preproc.fif"))[0]
@@ -69,11 +69,6 @@ for subject in SUBJECTS :
     
     n_trial = len(epoch_data)
     
-    # prepare dict for ress outputs
-    seq_behav_all_sub[f'sub-{subject}'] = {'pas' : [],
-                                           'accuracy': [],
-                                           'confidence': []}
-      
     
     ## Estimate SNR for each contrast
     
@@ -102,7 +97,6 @@ for subject in SUBJECTS :
     for contrast in contrasts:
    
         snr_pas_all_sub[f'sub-{subject}'][contrast] = {pas_num: [] for pas_num in range(1, 5)}
-        seq_behav_all_sub[f'sub-{subject}']['pas'] = {pas_num: [] for pas_num in range(1, 5)}
         
         for pas_num in range(1, 5):
             
@@ -113,7 +107,6 @@ for subject in SUBJECTS :
                 
                 # only keep relevant epochs
                 epoch_data_pas = epoch_data[idx_pas, :, :].mean(axis=0)
-                seq_behav_all_sub[f'sub-{subject}']['pas'][pas_num] = epoch_data_pas
                 
                 # get psd 
                 bins, psd = ss.welch(np.squeeze(epoch_data_pas.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
@@ -131,7 +124,6 @@ for subject in SUBJECTS :
     for contrast in contrasts:
    
         snr_acc_all_sub[f'sub-{subject}'][contrast] = {acc: [] for acc in accuracy}
-        seq_behav_all_sub[f'sub-{subject}']['accuracy'] = {acc: [] for acc in accuracy}
         
         for acc in accuracy:
             
@@ -142,7 +134,6 @@ for subject in SUBJECTS :
                 
                 # only keep relevant epochs
                 epoch_data_acc = epoch_data[idx_acc, :, :].mean(axis=0)
-                seq_behav_all_sub[f'sub-{subject}']['accuracy'][acc] = epoch_data_acc
                 
                 # get psd and snr
                 bins, psd = ss.welch(np.squeeze(epoch_data_acc.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
@@ -159,7 +150,6 @@ for subject in SUBJECTS :
     for contrast in contrasts:
    
         snr_conf_all_sub[f'sub-{subject}'][contrast] = {conf: [] for conf in range(1, 5)}
-        seq_behav_all_sub[f'sub-{subject}']['confidence'] = {conf: [] for conf in range(1, 5)}
         
         for conf in range(1, 5):
             
@@ -170,7 +160,6 @@ for subject in SUBJECTS :
                 
                 # only keep relevant epochs
                 epoch_data_conf = epoch_data[idx_conf, :, :].mean(axis=0)
-                seq_behav_all_sub[f'sub-{subject}']['confidence'][conf] = epoch_data_conf
                 
                 # get psd 
                 bins, psd = ss.welch(np.squeeze(epoch_data_conf.T), RESAMPLE_FREQ, nperseg=len(epoch_data_pas.T), axis=0)
@@ -183,9 +172,17 @@ for subject in SUBJECTS :
 # =============================================================================
 
 # save data 
-with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'seq_behav_all_sub.p'), 'wb') as f:
-    pickle.dump(seq_behav_all_sub, f)
-    
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'snr_contrast_all_sub.p'), 'wb') as f:
+    pickle.dump(snr_contrast_all_sub, f)
+
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'snr_pas_all_sub.p'), 'wb') as f:
+    pickle.dump(snr_pas_all_sub, f)
+
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'snr_acc_all_sub.p'), 'wb') as f:
+    pickle.dump(snr_acc_all_sub, f)
+
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'snr_conf_all_sub.p'), 'wb') as f:
+    pickle.dump(snr_conf_all_sub, f)
     
 # =============================================================================
     
@@ -197,18 +194,10 @@ idx_1_2hz = find_nearest_index(bins, FACE_FREQ)
 idx_6hz = find_nearest_index(bins, IMAGE_FREQ)
 
 # get snr for each contrast and frequency
-snr_1_2_C1 = []
-snr_1_2_C2 = []
-snr_6_C1 = []
-snr_6_C2 = []
-
-for sub in snr_pas_all_sub.keys():
-    data = [snr_contrast_all_sub[sub][contrast][0][idx_1_2hz, :64] for contrast in snr_contrast_all_sub[sub].keys()]
-    snr_1_2_C1.append(data[0])
-    snr_1_2_C2.append(data[1])
-    data = [snr_contrast_all_sub[sub][contrast][0][idx_6hz, :64] for contrast in snr_contrast_all_sub[sub].keys()]
-    snr_6_C1.append(data[0])
-    snr_6_C2.append(data[1])
+snr_1_2_C1 = [snr_contrast_all_sub[sub]['1%'][0][idx_1_2hz, :64] for sub in snr_contrast_all_sub.keys()]
+snr_1_2_C2 = [snr_contrast_all_sub[sub]['1.5%'][0][idx_1_2hz, :64] for sub in snr_contrast_all_sub.keys()]
+snr_6_C1 = [snr_contrast_all_sub[sub]['1%'][0][idx_6hz, :64] for sub in snr_contrast_all_sub.keys()]
+snr_6_C2 = [snr_contrast_all_sub[sub]['1.5%'][0][idx_6hz, :64] for sub in snr_contrast_all_sub.keys()]
 
 snr_1_2_C1 = np.mean(snr_1_2_C1, axis=0)   
 snr_1_2_C2 = np.mean(snr_1_2_C2, axis=0)   
@@ -247,7 +236,6 @@ ax_y_start = 0.1
 ax_y_height = 0.9
 cbar_ax = fig.add_axes([ax_x_start, ax_y_start, ax_x_width, ax_y_height])
 clb = fig.colorbar(im, cax=cbar_ax)
-fig.savefig(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, "Topomaps_images.png"), dpi=300)
 
 
 ## Topography according to PAS
@@ -633,19 +621,39 @@ idx_ROI_OCC = [epochs.info['ch_names'].index(electrod) for electrod in ROI_OCC]
 idx_ROI_OT_1 = [epochs.info['ch_names'].index(electrod) for electrod in ROI_OT_1]
 idx_ROI_OT_2 = [epochs.info['ch_names'].index(electrod) for electrod in ROI_OT_2]
 
-# idx_roi = [idx_ROI1, idx_ROI2, idx_ROI3, idx_ROI4, idx_ROI5]
 idx_roi = [idx_ROI_OCC, idx_ROI_OT_1, idx_ROI_OT_2]
-snr_roi_pas = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '2_4Hz', '3_6Hz', '6Hz', '12Hz', '18Hz']) for roi in range(len(idx_roi))}
+
+
+## Get grand average snr at each frequency, subject, and ROI
+
+snr_roi = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '6Hz']) for roi in range(len(idx_roi))}
+for sub in snr_contrast_all_sub.keys(): 
+               
+    for roi in range(len(idx_roi)):   
+        contrasts = snr_contrast_all_sub[sub].keys()
+        
+        for contrast in contrasts:    
+                             
+            snr_1 = snr_contrast_all_sub[sub][contrast][0][idx_1_2hz, idx_roi[roi]] 
+            snr_6 = snr_contrast_all_sub[sub][contrast][0][idx_6hz, idx_roi[roi]]
+                 
+            new_data = [{'Subject': sub,
+                         'Contrast': contrast, 
+                         '1_2Hz': np.mean(snr_1, axis=0),
+                         '6Hz': np.mean(snr_6, axis=0)}]
+                
+            for row in new_data:
+                snr_roi[f'roi{roi+1}'] = pd.concat([snr_roi[f'roi{roi+1}'], pd.DataFrame(row, index=[0])], ignore_index=True)
+
+snr_roi['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OCC_SNR_average_all_sub.csv'), index=False)  
+snr_roi['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT1_SNR_average_all_sub.csv'), index=False)  
+snr_roi['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT2_SNR_average_all_sub.csv'), index=False) 
+
 
 ## Get snr per PAS at each frequency, subject, and ROI
 
-snr_topo_pas_face = {}
-snr_topo_pas_image = {}
-
+snr_roi_pas = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '6Hz']) for roi in range(len(idx_roi))}
 for sub in snr_pas_all_sub.keys(): 
-    
-    snr_topo_pas_face[sub] = {contrast: [] for contrast in contrasts} 
-    snr_topo_pas_image[sub] = {contrast: [] for contrast in contrasts} 
                
     for roi in range(len(idx_roi)): 
         contrasts = snr_pas_all_sub[sub].keys()
@@ -676,7 +684,7 @@ snr_roi_pas['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT2_
 
 ## Get snr per accuracy at each frequency, subject, and ROI
 
-snr_roi_acc = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '2_4Hz', '3_6Hz', '6Hz', '12Hz', '18Hz']) for roi in range(len(idx_roi))}
+snr_roi_acc = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '6Hz']) for roi in range(len(idx_roi))}
 accuracy = snr_acc_all_sub['sub-3']['1%'].keys()
 for sub in snr_pas_all_sub.keys(): 
                
@@ -706,13 +714,10 @@ snr_roi_acc['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OCC_
 snr_roi_acc['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT1_SNR_acc_all_sub.csv'), index=False)  
 snr_roi_acc['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT2_SNR_acc_all_sub.csv'), index=False)  
 
-# plot topo maps
 
-
-    
 ## Get snr per confidence rating at each frequency, subject, and ROI
 
-snr_roi_conf = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '2_4Hz', '3_6Hz', '6Hz', '12Hz', '18Hz']) for roi in range(len(idx_roi))}
+snr_roi_conf = {f'roi{roi+1}': pd.DataFrame(columns=['Subject', 'Contrast', 'PAS', '1_2Hz', '6Hz']) for roi in range(len(idx_roi))}
 for sub in snr_pas_all_sub.keys(): 
                
     for roi in range(len(idx_roi)):   
@@ -740,4 +745,3 @@ for sub in snr_pas_all_sub.keys():
 snr_roi_conf['roi1'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OCC_SNR_conf_all_sub.csv'), index=False)  
 snr_roi_conf['roi2'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT1_SNR_conf_all_sub.csv'), index=False)  
 snr_roi_conf['roi3'].to_csv(os.path.join(ROOT_DIR, EEG_DIR, RESULT_DIR, 'roi_OT2_SNR_conf_all_sub.csv'), index=False)  
-
