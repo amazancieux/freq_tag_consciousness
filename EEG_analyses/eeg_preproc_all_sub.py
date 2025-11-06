@@ -19,7 +19,7 @@ from pyprep.find_noisy_channels import NoisyChannels
 
 # Import EEG data
 ROOT_DIR = "C:/Users/Admin/Desktop/RESEARCH PROJECTS ANALYSES/freq_tag_consciousness"
-EEG_DIR = 'EEG_analyses_S2'
+EEG_DIR = 'EEG_analyses'
 DATA_DIR = 'Data'
 RESULT_DIR = 'Results'
 
@@ -96,6 +96,6 @@ for subject in SUBJECTS :
     
 ## Save output
 
-with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'info_all_subjects_S2.pickle'), 'wb') as f:
+with open(os.path.join(ROOT_DIR, EEG_DIR, 'Results', 'info_all_subjects.pickle'), 'wb') as f:
     pickle.dump(info_all_sub, f)     
     
